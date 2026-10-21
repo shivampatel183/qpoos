@@ -1,0 +1,71 @@
+.top-header {
+    width: 100%;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    background-color: var(--bg-panel);
+    flex-shrink: 0;
+}
+
+/* ── Company switcher ────────────────────────────────────────────────────────── */
+
+.header-company {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.header-company:hover {
+    background-color: var(--bg-hover-light);
+    border-color: var(--border-dark);
+}
+
+/* ── Right side (user + logout) ──────────────────────────────────────────────── */
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-username {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.header-logout {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-family: var(--font-family-main);
+    padding: 6px 8px;
+    border-radius: 6px;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+.header-logout:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-hover-light);
+}

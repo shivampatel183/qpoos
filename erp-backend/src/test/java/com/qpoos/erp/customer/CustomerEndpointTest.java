@@ -1,0 +1,264 @@
+package com.qpoos.erp.customer;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.qpoos.erp.common.security.JwtService;
+import com.qpoos.erp.company.application.CompanyService;
+import com.qpoos.erp.company.dto.CompanyRequest;
+import com.qpoos.erp.company.dto.CompanyResponse;
+import com.qpoos.erp.user.domain.UserEntity;
+import com.qpoos.erp.user.infrastructure.UserRepository;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+
+import java.util.UUID;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+class CustomerEndpointTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private CompanyService companyService;
+
+    @Test
+    void performsCrudAndKeepsCustomersIsolatedByTokenCompany() throws Exception {
+        UserEntity user = createUser();
+        CompanyResponse companyA = companyService.create(user.getId(), companyRequest("Customer Company A"));
+        CompanyResponse companyB = companyService.create(user.getId(), companyRequest("Customer Company B"));
+        String companyAToken = jwtService.createAccessToken(user, companyA.id());
+        String companyBToken = jwtService.createAccessToken(user, companyB.id());
+
+        MvcResult createResult = mockMvc.perform(post("/api/customers")
+                        .header("Authorization", bearer(companyAToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createPayload()))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.companyId").value(companyA.id().toString()))
+                .andExpect(jsonPath("$.companyName").value("Acme Retail"))
+                .andExpect(jsonPath("$.displayName").value("Acme"))
+                .andExpect(jsonPath("$.gstNo").value("27ABCDE1234F1Z5"))
+                .andExpect(jsonPath("$.email").value("accounts@acme.example"))
+                .andExpect(jsonPath("$.ifscCode").value("HDFC0001234"))
+                .andExpect(jsonPath("$.openingBalance").value(1500.75))
+                .andReturn();
+
+        JsonNode createdCustomer = objectMapper.readTree(
+                createResult.getResponse().getContentAsString()
+        );
+        long customerId = createdCustomer.get("id").asLong();
+
+        mockMvc.perform(get("/api/customers")
+                        .header("Authorization", bearer(companyAToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(customerId));
+
+        mockMvc.perform(get("/api/customers")
+                        .header("Authorization", bearer(companyBToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        mockMvc.perform(post("/api/customers")
+                        .header("Authorization", bearer(companyAToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createPayload().replace("\" Acme \"", "\"acme\"")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Customer display name already exists"));
+
+        mockMvc.perform(post("/api/customers")
+                        .header("Authorization", bearer(companyBToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createPayload()))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.displayName").value("Acme"));
+
+        mockMvc.perform(get("/api/customers/{customerId}", customerId)
+                        .header("Authorization", bearer(companyBToken)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Customer not found"));
+
+        String secondCustomerPayload = createPayload()
+                .replace("\" Acme Retail \"", "\"Beta Retail\"")
+                .replace("\" Acme \"", "\"Beta\"");
+        mockMvc.perform(post("/api/customers")
+                        .header("Authorization", bearer(companyAToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(secondCustomerPayload))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(put("/api/customers/{customerId}", customerId)
+                        .header("Authorization", bearer(companyAToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updatePayload().replace("\"Acme Prime\"", "\"beta\"")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Customer display name already exists"));
+
+        mockMvc.perform(put("/api/customers/{customerId}", customerId)
+                        .header("Authorization", bearer(companyAToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updatePayload()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.companyName").value("Acme Prime Retail"))
+                .andExpect(jsonPath("$.displayName").value("Acme Prime"))
+                .andExpect(jsonPath("$.mobileNo").value("9999999999"))
+                .andExpect(jsonPath("$.openingBalance").value(2500.00));
+
+        mockMvc.perform(delete("/api/customers/{customerId}", customerId)
+                        .header("Authorization", bearer(companyAToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("Customer deleted successfully."));
+
+        mockMvc.perform(get("/api/customers/{customerId}", customerId)
+                        .header("Authorization", bearer(companyAToken)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Customer not found"));
+    }
+
+    @Test
+    void requiresSelectedCompanyAndValidCustomerData() throws Exception {
+        UserEntity user = createUser();
+        CompanyResponse company = companyService.create(
+                user.getId(),
+                companyRequest("Customer Validation Company")
+        );
+
+        mockMvc.perform(post("/api/customers")
+                        .header("Authorization", bearer(jwtService.createAccessToken(user)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createPayload()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("A company must be selected"));
+
+        String invalidPayload = """
+                {
+                  "companyName": "Invalid Customer",
+                  "firstName": "Invalid",
+                  "lastName": "Customer",
+                  "displayName": "Invalid Customer",
+                  "email": "not-an-email",
+                  "ifscCode": "INVALID",
+                  "gstNo": "INVALID",
+                  "openingBalance": -1
+                }
+                """;
+
+        mockMvc.perform(post("/api/customers")
+                        .header(
+                                "Authorization",
+                                bearer(jwtService.createAccessToken(user, company.id()))
+                        )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidPayload))
+                .andExpect(status().isBadRequest());
+    }
+
+    private UserEntity createUser() {
+        return userRepository.save(UserEntity.builder()
+                .email("customer-" + UUID.randomUUID() + "@example.com")
+                .passwordHash(passwordEncoder.encode("StrongPass123!"))
+                .role("user")
+                .isActive(true)
+                .emailVerified(true)
+                .build());
+    }
+
+    private CompanyRequest companyRequest(String prefix) {
+        return new CompanyRequest(
+                prefix + " " + UUID.randomUUID(),
+                null,
+                false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    private String bearer(String token) {
+        return "Bearer " + token;
+    }
+
+    private String createPayload() {
+        return """
+                {
+                  "companyName": " Acme Retail ",
+                  "firstName": "Anita",
+                  "lastName": "Shah",
+                  "displayName": " Acme ",
+                  "gstNo": "27abcde1234f1z5",
+                  "email": "Accounts@Acme.Example",
+                  "mobileNo": "9876543210",
+                  "streetAddress1": "12 Market Road",
+                  "streetAddress2": "Second Floor",
+                  "city": "Mumbai",
+                  "state": "Maharashtra",
+                  "country": "India",
+                  "pinCode": "400001",
+                  "notes": "Priority customer",
+                  "accountHolderName": "Acme Retail Pvt Ltd",
+                  "accountNumber": "1234567890",
+                  "ifscCode": "hdfc0001234",
+                  "openingBalance": 1500.75
+                }
+                """;
+    }
+
+    private String updatePayload() {
+        return """
+                {
+                  "companyName": "Acme Prime Retail",
+                  "firstName": "Anita",
+                  "lastName": "Shah",
+                  "displayName": "Acme Prime",
+                  "gstNo": "27ABCDE1234F1Z5",
+                  "email": "accounts@acme.example",
+                  "mobileNo": "9999999999",
+                  "streetAddress1": "12 Market Road",
+                  "city": "Mumbai",
+                  "state": "Maharashtra",
+                  "country": "India",
+                  "pinCode": "400001",
+                  "accountHolderName": "Acme Prime Retail Pvt Ltd",
+                  "accountNumber": "1234567890",
+                  "ifscCode": "HDFC0001234",
+                  "openingBalance": 2500.00
+                }
+                """;
+    }
+}

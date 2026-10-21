@@ -1,0 +1,153 @@
+.customer-form {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.customer-form__section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.customer-form__section + .customer-form__section {
+    padding-top: 20px;
+    border-top: 1px solid var(--border-light);
+}
+
+.customer-form__section h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.customer-form__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.customer-form__field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    color: var(--text-primary);
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.customer-form__field--wide {
+    grid-column: 1 / -1;
+}
+
+.customer-form__field--required > span::after {
+    content: " *";
+    color: #dc2626;
+}
+
+.customer-form__field input,
+.customer-form__field textarea {
+    width: 100%;
+    border: 1.5px solid var(--border-dark);
+    border-radius: 8px;
+    outline: 0;
+    background: var(--bg-app);
+    color: var(--text-primary);
+    font-family: var(--font-family-main);
+    font-size: 13.5px;
+    transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+}
+
+.customer-form__field input {
+    height: 38px;
+    padding: 0 12px;
+}
+
+.customer-form__field textarea {
+    min-height: 112px;
+    padding: 10px 12px;
+    resize: vertical;
+}
+
+.customer-form__field input:focus,
+.customer-form__field textarea:focus {
+    border-color: var(--brand-primary);
+    background: var(--bg-panel);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.customer-form__field small {
+    align-self: flex-end;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.customer-form__field--invalid input,
+.customer-form__field--invalid textarea {
+    border-color: #dc2626;
+}
+
+.customer-form__field--invalid input:focus,
+.customer-form__field--invalid textarea:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08);
+}
+
+.customer-form__field small.customer-form__error {
+    align-self: flex-start;
+    color: #dc2626;
+    font-weight: 600;
+}
+
+.customer-form__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 38px;
+    padding: 0 18px;
+    border-radius: 8px;
+    font-family: var(--font-family-main);
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.customer-form__button--primary {
+    border: 0;
+    background: var(--brand-primary);
+    color: #fff;
+}
+
+.customer-form__button--primary:hover:not(:disabled) {
+    background: var(--brand-dark-hover);
+}
+
+.customer-form__button--secondary {
+    border: 1.5px solid var(--border-dark);
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.customer-form__button--secondary:hover:not(:disabled) {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+}
+
+.customer-form__button:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
+@media (max-width: 640px) {
+    .customer-form__grid {
+        grid-template-columns: 1fr;
+    }
+
+    .customer-form__field--wide {
+        grid-column: auto;
+    }
+}

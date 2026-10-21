@@ -1,0 +1,21 @@
+.expense-transaction-form-page {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.expense-transaction-form-page .purchase-order-page__back {
+    align-self: flex-start;
+}
+
+.expense-transaction-form-page__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 280px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 600;
+}

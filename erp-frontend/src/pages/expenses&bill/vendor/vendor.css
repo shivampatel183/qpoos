@@ -1,0 +1,37 @@
+.vendor-page {
+    width: 100%;
+}
+
+.vendor-page__name,
+.vendor-page__contact {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.vendor-page__name strong,
+.vendor-page__name span,
+.vendor-page__contact span,
+.vendor-page__contact small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vendor-page__name strong {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.vendor-page__name span,
+.vendor-page__contact small {
+    margin-top: 2px;
+    color: var(--text-secondary);
+    font-size: 11.5px;
+}
+
+.vendor-page__balance {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    white-space: nowrap;
+}

@@ -1,0 +1,274 @@
+.purchase-order-page {
+  width: 100%;
+  color: var(--text-primary);
+}
+
+.purchase-order-page__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 180px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.purchase-order-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.purchase-order-page__back:hover {
+  color: var(--brand-primary);
+}
+
+.purchase-order-form {
+  width: 100%;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: var(--bg-panel);
+  overflow: visible;
+}
+
+.purchase-order-form header,
+.purchase-order-form__section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.purchase-order-form header {
+  margin: -18px -18px 0;
+  padding: 18px 18px 20px;
+  background: var(--bg-panel);
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.purchase-order-form h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+.purchase-order-form h2 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.purchase-order-form__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 20px;
+}
+.purchase-order-form__section + .purchase-order-form__section,
+.purchase-order-form__section + .transaction-form__section {
+  margin-top: 20px;
+  border-top: 1px solid var(--border-light);
+}
+
+.purchase-order-form__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.purchase-order-form__section--details .purchase-order-form__grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.purchase-order-form__section--address .purchase-order-form__grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.purchase-order-form__section--address label:nth-child(1),
+.purchase-order-form__section--address label:nth-child(2) {
+  grid-column: span 2;
+}
+
+.purchase-order-form__section--notes {
+  max-width: 720px;
+}
+
+.purchase-order-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.purchase-order-form input,
+.purchase-order-form textarea {
+  width: 100%;
+  border: 1.5px solid var(--border-dark);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 400;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background-color 0.15s;
+}
+
+.purchase-order-form input {
+  height: 38px;
+  padding: 0 12px;
+}
+.purchase-order-form textarea {
+  padding: 10px 12px;
+  resize: vertical;
+}
+.purchase-order-form input:focus,
+.purchase-order-form textarea:focus {
+  border-color: var(--brand-primary);
+  background: var(--bg-panel);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.purchase-order-form__save,
+.purchase-order-form__section-title button,
+.purchase-order-form__actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--brand-primary);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.purchase-order-form__save:hover,
+.purchase-order-form__section-title button:hover,
+.purchase-order-form__actions button:hover {
+  background: var(--brand-dark-hover);
+}
+
+.purchase-order-form__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.purchase-order-form__actions button:first-child {
+  background: var(--bg-app);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+.purchase-order-form__actions button:first-child:hover {
+  background: var(--border-light);
+}
+
+.purchase-order-form__line {
+  display: grid;
+  grid-template-columns: 28px minmax(220px, 1fr) 100px 120px 90px 36px;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.purchase-order-form__line button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.purchase-order-form__line button:hover {
+  color: #dc2626;
+}
+.purchase-order-form__notes {
+  max-width: 680px;
+}
+
+.purchase-order-form__summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+  padding: 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: var(--bg-app);
+}
+
+.purchase-order-form__summary div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.purchase-order-form__summary span {
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.purchase-order-form__summary strong {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.purchase-order-form__summary-total strong {
+  color: var(--brand-primary);
+  font-size: 16px;
+}
+
+@media (max-width: 760px) {
+  .purchase-order-form__summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .purchase-order-form {
+    padding: 14px;
+  }
+  .purchase-order-form header {
+    align-items: flex-start;
+    flex-direction: column;
+    margin: -14px -14px 0;
+    padding: 14px 14px 16px;
+  }
+  .purchase-order-form__grid,
+  .purchase-order-form__section--details .purchase-order-form__grid,
+  .purchase-order-form__section--address .purchase-order-form__grid {
+    grid-template-columns: 1fr;
+  }
+  .purchase-order-form__section--address label:nth-child(1),
+  .purchase-order-form__section--address label:nth-child(2) {
+    grid-column: auto;
+  }
+  .purchase-order-form__line {
+    grid-template-columns: 24px minmax(150px, 1fr) 72px 90px 68px 30px;
+    gap: 6px;
+  }
+}

@@ -1,0 +1,71 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------------< com.qpoos:erp >----------------------------
+[INFO] Building erp 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.5.5:run (default-cli) > test-compile @ erp >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ erp ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ erp ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ erp ---
+[INFO] Copying 1 resource from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.14.0:testCompile (default-testCompile) @ erp ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:3.5.5:run (default-cli) < test-compile @ erp <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.5.5:run (default-cli) @ erp ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.5.5)
+
+2026-07-16T22:17:58.773+05:30  INFO 228 --- [erp] [           main] com.qpoos.erp.ErpApplication             : Starting ErpApplication using Java 17.0.15 with PID 228 (D:\qpooserp\erp-backend\target\classes started by Shivam in D:\qpooserp\erp-backend)
+2026-07-16T22:17:58.781+05:30  INFO 228 --- [erp] [           main] com.qpoos.erp.ErpApplication             : No active profile set, falling back to 1 default profile: "default"
+2026-07-16T22:18:01.124+05:30  INFO 228 --- [erp] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-07-16T22:18:01.304+05:30  INFO 228 --- [erp] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 156 ms. Found 8 JPA repository interfaces.
+2026-07-16T22:18:03.260+05:30  INFO 228 --- [erp] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-07-16T22:18:03.294+05:30  INFO 228 --- [erp] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-07-16T22:18:03.295+05:30  INFO 228 --- [erp] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.44]
+2026-07-16T22:18:03.455+05:30  INFO 228 --- [erp] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-07-16T22:18:03.458+05:30  INFO 228 --- [erp] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 4538 ms
+2026-07-16T22:18:03.986+05:30  INFO 228 --- [erp] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-07-16T22:18:04.174+05:30  INFO 228 --- [erp] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.26.Final
+2026-07-16T22:18:04.288+05:30  INFO 228 --- [erp] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-07-16T22:18:05.111+05:30  INFO 228 --- [erp] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-07-16T22:18:05.198+05:30  INFO 228 --- [erp] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-07-16T22:18:05.842+05:30  INFO 228 --- [erp] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:file:./data/erp-dev user=SA
+2026-07-16T22:18:05.845+05:30  INFO 228 --- [erp] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-07-16T22:18:06.003+05:30  INFO 228 --- [erp] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 2.3.232
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-07-16T22:18:08.408+05:30  INFO 228 --- [erp] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-07-16T22:18:08.582+05:30  INFO 228 --- [erp] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-07-16T22:18:10.891+05:30  INFO 228 --- [erp] [           main] eAuthenticationProviderManagerConfigurer : Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2026-07-16T22:18:10.893+05:30  WARN 228 --- [erp] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2026-07-16T22:18:11.898+05:30  INFO 228 --- [erp] [           main] o.s.b.a.h2.H2ConsoleAutoConfiguration    : H2 console available at '/h2-console'. Database available at 'jdbc:h2:file:./data/erp-dev'
+2026-07-16T22:18:12.199+05:30  INFO 228 --- [erp] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2026-07-16T22:18:12.223+05:30  INFO 228 --- [erp] [           main] com.qpoos.erp.ErpApplication             : Started ErpApplication in 14.511 seconds (process running for 15.493)
+2026-07-16T22:20:53.633+05:30  INFO 228 --- [erp] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-07-16T22:20:53.636+05:30  INFO 228 --- [erp] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-07-16T22:20:53.642+05:30  INFO 228 --- [erp] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 4 ms

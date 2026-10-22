@@ -58,6 +58,8 @@ export type TransactionFormProps = {
   transaction?: Transaction;
   onCancel: () => void;
   onSaved?: (transaction: Transaction) => void;
+  /** Hide the internal header buttons when the page renders its own FormActionBar. */
+  hideHeaderActions?: boolean;
 };
 
 const TRANSACTION_TYPE_OPTIONS = [
@@ -280,6 +282,7 @@ export function TransactionForm({
   transaction,
   onCancel,
   onSaved,
+  hideHeaderActions = false,
 }: TransactionFormProps) {
   const messagePopup = useMessagePopup();
   const [form, setForm] = useState<TransactionFormState>(() =>
@@ -439,6 +442,7 @@ export function TransactionForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving) return;
     const validationErrors = validateForm(form, lines);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -474,31 +478,33 @@ export function TransactionForm({
               : "New Expense Transaction"}
           </h2>
         </div>
-        <div className="transaction-form-page__actions">
-          <button
-            type="button"
-            className="transaction-form__button transaction-form__button--secondary"
-            onClick={onCancel}
-            disabled={saving}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            form="transaction-form"
-            className="transaction-form__button transaction-form__button--primary"
-            disabled={saving || loadingLookups}
-          >
-            {saving ? (
-              <>
-                <Spinner white size={14} />
-                Saving...
-              </>
-            ) : (
-              "Save"
-            )}
-          </button>
-        </div>
+        {!hideHeaderActions && (
+          <div className="transaction-form-page__actions">
+            <button
+              type="button"
+              className="transaction-form__button transaction-form__button--secondary"
+              onClick={onCancel}
+              disabled={saving}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="transaction-form"
+              className="transaction-form__button transaction-form__button--primary"
+              disabled={saving || loadingLookups}
+            >
+              {saving ? (
+                <>
+                  <Spinner white size={14} />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
+            </button>
+          </div>
+        )}
       </div>
       <form
         id="transaction-form"

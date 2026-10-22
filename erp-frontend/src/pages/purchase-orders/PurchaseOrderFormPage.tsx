@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { FormActionBar } from "@/components/ui/FormActionBar";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import {
   DocumentItemLines,
@@ -238,38 +238,24 @@ export function PurchaseOrderFormPage() {
     );
   return (
     <div className="purchase-order-page">
-      <button
-        type="button"
-        className="purchase-order-page__back"
-        onClick={() => navigate("/purchase-orders")}
+      <FormActionBar
+        backLabel="Back to purchase orders"
+        onBack={() => navigate("/purchase-orders")}
+        onCancel={() => navigate("/purchase-orders")}
+        formId="purchase-order-form"
+        saving={saving}
+        saveDisabled={!!order && order.status !== "DRAFT"}
+      />
+      <form
+        id="purchase-order-form"
+        className="purchase-order-form"
+        onSubmit={submit}
       >
-        <ArrowLeft size={16} /> Back to purchase orders
-      </button>
-      <form className="purchase-order-form" onSubmit={submit}>
         <header>
-          <div>
-            <h1>
-              {order ? `Edit ${order.orderNumber}` : "New Purchase Order"}
-            </h1>
-          </div>
+          <h1>
+            {order ? `Edit ${order.orderNumber}` : "New Purchase Order"}
+          </h1>
           <div className="purchase-order-form__actions">
-            <button
-              type="button"
-              className="purchase-order-form__cancel"
-              onClick={() => navigate("/purchase-orders")}
-              disabled={saving}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="purchase-order-form__save"
-              disabled={saving || (!!order && order.status !== "DRAFT")}
-            >
-              {saving
-                ? "Saving..."
-                : "Save"}
-            </button>
             {order?.status === "DRAFT" && (
               <button
                 type="button"
@@ -282,6 +268,7 @@ export function PurchaseOrderFormPage() {
             {order?.status === "SENT" && (
               <button
                 type="button"
+                className="btn-success"
                 onClick={() => changeStatus("approve")}
                 disabled={saving}
               >
@@ -291,6 +278,7 @@ export function PurchaseOrderFormPage() {
             {order && ["DRAFT", "SENT", "APPROVED"].includes(order.status) && (
               <button
                 type="button"
+                className="btn-danger"
                 onClick={() => changeStatus("cancel")}
                 disabled={saving}
               >

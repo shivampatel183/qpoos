@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import { TransactionForm } from '@/components/transactions';
+import { FormActionBar } from '@/components/ui/FormActionBar';
 import { Spinner } from '@/components/ui/Spinner';
 import { useMessagePopup } from '@/components/ui/MessagePopup';
 import { ApiError } from '@/lib/apiClient';
 import { transactionService, type Transaction } from '@/services/transactionService';
-import '../purchase-orders/PurchaseOrderPage.css';
 import './ExpenseTransactionFormPage.css';
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -62,17 +61,17 @@ export function ExpenseTransactionFormPage() {
                 </div>
             ) : (
                 <>
-                    <button
-                        type="button"
-                        className="purchase-order-page__back"
-                        onClick={goBack}
-                    >
-                        <ArrowLeft size={16} /> Back to expenses
-                    </button>
+                    <FormActionBar
+                        backLabel="Back to expenses"
+                        onBack={goBack}
+                        onCancel={goBack}
+                        formId="transaction-form"
+                    />
                     <TransactionForm
                         transaction={transaction ?? undefined}
                         onCancel={goBack}
                         onSaved={goBack}
+                        hideHeaderActions
                     />
                 </>
             )}

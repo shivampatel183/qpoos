@@ -49,6 +49,48 @@
   border-color: rgba(255, 255, 255, 0.3);
   border-top-color: #fff;
 }
+/*  */
+/* ── Common button variants ──────────────────────────────────────────────── */
+
+.btn-success,
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-success {
+  background: #059669;
+  color: #fff;
+}
+
+.btn-success:hover {
+  background: #047857;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+}
+
+.btn-success:disabled,
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
 
 /* ── Alert banner ─────────────────────────────────────────────────────────── */
 

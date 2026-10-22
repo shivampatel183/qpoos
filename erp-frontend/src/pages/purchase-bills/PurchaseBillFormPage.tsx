@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { FormActionBar } from "@/components/ui/FormActionBar";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import {
   DocumentItemLines,
@@ -220,46 +220,27 @@ export function PurchaseBillFormPage() {
 
   return (
     <div className="purchase-order-page">
-      <button
-        type="button"
-        className="purchase-order-page__back"
-        onClick={() => navigate("/purchase-bills")}
+      <FormActionBar
+        backLabel="Back to purchase bills"
+        onBack={() => navigate("/purchase-bills")}
+        onCancel={() => navigate("/purchase-bills")}
+        formId="purchase-bill-form"
+        saveLabel={bill?.status === "DRAFT" ? "Save Draft" : "Save"}
+        saving={saving}
+        saveDisabled={!!bill && bill.status !== "DRAFT"}
+      />
+      <form
+        id="purchase-bill-form"
+        className="purchase-order-form"
+        onSubmit={submit}
       >
-        <ArrowLeft size={16} /> Back to purchase bills
-      </button>
-      <form className="purchase-order-form" onSubmit={submit}>
         <header>
-          <div>
-            <h1>{bill ? `Edit ${bill.billNumber}` : "New Purchase Bill"}</h1>
-          </div>
+          <h1>{bill ? `Edit ${bill.billNumber}` : "New Purchase Bill"}</h1>
           <div className="purchase-order-form__actions">
-            <button
-              type="button"
-              className="purchase-order-form__cancel"
-              onClick={() => navigate("/purchase-bills")}
-              disabled={saving}
-            >
-              Cancel
-            </button>
-            <button
-              type={bill && bill.status !== "DRAFT" ? "button" : "submit"}
-              className="purchase-order-form__save"
-              disabled={saving}
-              onClick={
-                bill && bill.status !== "DRAFT"
-                  ? () => navigate("/purchase-bills")
-                  : undefined
-              }
-            >
-              {saving
-                ? "Saving..."
-                : bill?.status === "DRAFT"
-                  ? "Save Draft"
-                  : "Save"}
-            </button>
             {bill?.status === "DRAFT" && (
               <button
                 type="button"
+                className="btn-success"
                 onClick={() => changeStatus("post")}
                 disabled={saving}
               >
@@ -269,6 +250,7 @@ export function PurchaseBillFormPage() {
             {bill?.status === "DRAFT" && (
               <button
                 type="button"
+                className="btn-danger"
                 onClick={() => changeStatus("cancel")}
                 disabled={saving}
               >

@@ -237,7 +237,7 @@
 
 .purchase-order-form__save,
 .purchase-order-form__section-title button,
-.purchase-order-form__actions button {
+.purchase-order-form__actions button:not(.btn-success):not(.btn-danger) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -256,7 +256,7 @@
 
 .purchase-order-form__save:hover,
 .purchase-order-form__section-title button:hover,
-.purchase-order-form__actions button:hover {
+.purchase-order-form__actions button:not(.btn-success):not(.btn-danger):hover {
   background: var(--brand-dark-hover);
 }
 
@@ -265,7 +265,7 @@
   align-items: center;
   gap: 8px;
 }
-.purchase-order-form__actions button:first-child {
+.purchase-order-form__actions button:first-child:not(.btn-success):not(.btn-danger) {
   background: var(--bg-app);
   color: var(--text-primary);
   border: 1px solid var(--border-light);

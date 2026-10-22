@@ -105,6 +105,15 @@ export const purchaseOrderService = {
   approve(id: number): Promise<PurchaseOrder> {
     return apiClient.post<PurchaseOrder>(API.purchaseOrders.approve(id), {});
   },
+  partiallyReceive(id: number): Promise<PurchaseOrder> {
+    return apiClient.post<PurchaseOrder>(API.purchaseOrders.partiallyReceive(id), {});
+  },
+  receive(id: number): Promise<PurchaseOrder> {
+    return apiClient.post<PurchaseOrder>(API.purchaseOrders.receive(id), {});
+  },
+  close(id: number): Promise<PurchaseOrder> {
+    return apiClient.post<PurchaseOrder>(API.purchaseOrders.close(id), {});
+  },
   cancel(id: number): Promise<PurchaseOrder> {
     return apiClient.post<PurchaseOrder>(API.purchaseOrders.cancel(id), {});
   },

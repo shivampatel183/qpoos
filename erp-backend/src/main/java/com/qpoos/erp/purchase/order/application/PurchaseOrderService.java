@@ -106,6 +106,21 @@ public class PurchaseOrderService {
     }
 
     @Transactional
+    public PurchaseOrderResponse partiallyReceive(Long id) {
+        return transition(id, PurchaseOrderStatus.PARTIALLY_RECEIVED);
+    }
+
+    @Transactional
+    public PurchaseOrderResponse receive(Long id) {
+        return transition(id, PurchaseOrderStatus.RECEIVED);
+    }
+
+    @Transactional
+    public PurchaseOrderResponse close(Long id) {
+        return transition(id, PurchaseOrderStatus.CLOSED);
+    }
+
+    @Transactional
     public PurchaseOrderResponse cancel(Long id) {
         return transition(id, PurchaseOrderStatus.CANCELLED);
     }

@@ -93,6 +93,9 @@ export const API = {
     update: (id: string | number) => `/purchase-orders/${id}`,
     submit: (id: string | number) => `/purchase-orders/${id}/submit`,
     approve: (id: string | number) => `/purchase-orders/${id}/approve`,
+    partiallyReceive: (id: string | number) => `/purchase-orders/${id}/partially-receive`,
+    receive: (id: string | number) => `/purchase-orders/${id}/receive`,
+    close: (id: string | number) => `/purchase-orders/${id}/close`,
     cancel: (id: string | number) => `/purchase-orders/${id}/cancel`,
   },
   purchaseBills: {

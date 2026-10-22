@@ -5,7 +5,6 @@ export type PurchaseOrderStatus =
   | "DRAFT"
   | "SENT"
   | "APPROVED"
-  | "PARTIALLY_RECEIVED"
   | "RECEIVED"
   | "CANCELLED"
   | "CLOSED";
@@ -104,9 +103,6 @@ export const purchaseOrderService = {
   },
   approve(id: number): Promise<PurchaseOrder> {
     return apiClient.post<PurchaseOrder>(API.purchaseOrders.approve(id), {});
-  },
-  partiallyReceive(id: number): Promise<PurchaseOrder> {
-    return apiClient.post<PurchaseOrder>(API.purchaseOrders.partiallyReceive(id), {});
   },
   receive(id: number): Promise<PurchaseOrder> {
     return apiClient.post<PurchaseOrder>(API.purchaseOrders.receive(id), {});

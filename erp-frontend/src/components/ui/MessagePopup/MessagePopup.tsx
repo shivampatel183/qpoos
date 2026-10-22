@@ -4,10 +4,9 @@ import {
     useState,
     type ReactNode,
 } from 'react';
-import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
+import { AlertCircle, Check, Info, X } from 'lucide-react';
 import {
     DEFAULT_MESSAGE_DURATION,
-    MESSAGE_TYPE_TITLES,
     MessagePopupContext,
     type MessagePopupContextValue,
     type MessagePopupItem,
@@ -20,13 +19,13 @@ const TYPE_META: Record<MessagePopupType, {
     icon: ReactNode;
 }> = {
     success: {
-        icon: <CheckCircle2 size={20} />,
+        icon: <Check size={14} strokeWidth={3} />,
     },
     error: {
-        icon: <AlertCircle size={20} />,
+        icon: <AlertCircle size={14} strokeWidth={2.5} />,
     },
     info: {
-        icon: <Info size={20} />,
+        icon: <Info size={14} strokeWidth={2.5} />,
     },
 };
 
@@ -43,7 +42,7 @@ export function MessagePopupProvider({ children }: { children: ReactNode }) {
         const item: MessagePopupItem = {
             id,
             type,
-            title: options.title ?? MESSAGE_TYPE_TITLES[type],
+            title: options.title ?? null,
             message: options.message,
             duration: options.duration ?? DEFAULT_MESSAGE_DURATION,
         };
@@ -76,12 +75,14 @@ export function MessagePopupProvider({ children }: { children: ReactNode }) {
                         className={`message-popup message-popup--${message.type}`}
                         role={message.type === 'error' ? 'alert' : 'status'}
                     >
-                        <div className="message-popup__icon">
+                        <span className="message-popup__icon" aria-hidden="true">
                             {TYPE_META[message.type].icon}
-                        </div>
+                        </span>
 
                         <div className="message-popup__content">
-                            <p className="message-popup__title">{message.title}</p>
+                            {message.title && (
+                                <p className="message-popup__title">{message.title}</p>
+                            )}
                             <p className="message-popup__text">{message.message}</p>
                         </div>
 
@@ -91,7 +92,7 @@ export function MessagePopupProvider({ children }: { children: ReactNode }) {
                             onClick={() => dismissMessage(message.id)}
                             aria-label="Dismiss message"
                         >
-                            <X size={16} />
+                            <X size={15} />
                         </button>
                     </div>
                 ))}

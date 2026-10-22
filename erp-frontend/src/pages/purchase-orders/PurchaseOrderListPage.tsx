@@ -17,7 +17,6 @@ const STATUS_LABELS: Record<PurchaseOrderStatus, string> = {
   DRAFT: "Draft",
   SENT: "Sent to vendor",
   APPROVED: "Approved",
-  PARTIALLY_RECEIVED: "Partially received",
   RECEIVED: "Received",
   CANCELLED: "Cancelled",
   CLOSED: "Closed",
@@ -27,18 +26,16 @@ const PURCHASE_ORDER_STAGES: PurchaseOrderStatus[] = [
   "DRAFT",
   "SENT",
   "APPROVED",
-  "PARTIALLY_RECEIVED",
   "RECEIVED",
   "CLOSED",
 ];
 
 const NEXT_STAGE_ACTION: Partial<
-  Record<PurchaseOrderStatus, "submit" | "approve" | "partiallyReceive" | "receive" | "close">
+  Record<PurchaseOrderStatus, "submit" | "approve" | "receive" | "close">
 > = {
   DRAFT: "submit",
   SENT: "approve",
-  APPROVED: "partiallyReceive",
-  PARTIALLY_RECEIVED: "receive",
+  APPROVED: "receive",
   RECEIVED: "close",
 };
 
@@ -120,7 +117,7 @@ export function PurchaseOrderListPage() {
   const updateStage = useCallback(
     async (
       order: PurchaseOrderListItem,
-      action: "submit" | "approve" | "partiallyReceive" | "receive" | "close" | "cancel",
+      action: "submit" | "approve" | "receive" | "close" | "cancel",
     ) => {
       setUpdatingOrderId(order.id);
       try {
@@ -197,7 +194,7 @@ export function PurchaseOrderListPage() {
   const moreActions = useMemo<DataTableAction<PurchaseOrderListItem>[]>(
     () => [
       {
-        label: "Open purchase order",
+        label: "Open order",
         icon: Edit2,
         onClick: (order) =>
           navigate(
@@ -207,7 +204,7 @@ export function PurchaseOrderListPage() {
           ),
       },
       {
-        label: "Cancel purchase order",
+        label: "Cancel order",
         icon: X,
         danger: true,
         hidden: (order) => !["DRAFT", "SENT", "APPROVED"].includes(order.status),

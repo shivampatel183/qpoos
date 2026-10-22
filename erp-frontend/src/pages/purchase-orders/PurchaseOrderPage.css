@@ -39,11 +39,6 @@
   color: #6d28d9;
 }
 
-.purchase-order-stage__badge--partially-received {
-  background: #fff7ed;
-  color: #c2410c;
-}
-
 .purchase-order-stage__badge--received,
 .purchase-order-stage__badge--closed {
   background: #ecfdf5;

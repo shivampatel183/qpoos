@@ -9,8 +9,12 @@ export interface MessagePopupOptions {
     duration?: number;
 }
 
-export interface MessagePopupItem extends Required<MessagePopupOptions> {
+export interface MessagePopupItem {
     id: number;
+    type: MessagePopupType;
+    title: string | null;
+    message: string;
+    duration: number;
 }
 
 export interface MessagePopupContextValue {
@@ -22,11 +26,5 @@ export interface MessagePopupContextValue {
 }
 
 export const DEFAULT_MESSAGE_DURATION = 4200;
-
-export const MESSAGE_TYPE_TITLES: Record<MessagePopupType, string> = {
-    success: 'Success',
-    error: 'Error',
-    info: 'Info',
-};
 
 export const MessagePopupContext = createContext<MessagePopupContextValue | null>(null);

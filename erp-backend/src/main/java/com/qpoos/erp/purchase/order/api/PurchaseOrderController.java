@@ -60,11 +60,6 @@ public class PurchaseOrderController {
         return ResponseEntity.ok(purchaseOrderService.approve(id));
     }
 
-    @PostMapping("/{id}/partially-receive")
-    public ResponseEntity<PurchaseOrderResponse> partiallyReceive(@PathVariable Long id) {
-        return ResponseEntity.ok(purchaseOrderService.partiallyReceive(id));
-    }
-
     @PostMapping("/{id}/receive")
     public ResponseEntity<PurchaseOrderResponse> receive(@PathVariable Long id) {
         return ResponseEntity.ok(purchaseOrderService.receive(id));

@@ -2,7 +2,7 @@ package com.qpoos.erp.company.application;
 
 import com.qpoos.erp.company.domain.CompanyEntity;
 import com.qpoos.erp.company.infrastructure.CompanyRepository;
-import com.qpoos.erp.accounting.setup.AccountingBootstrapService;
+import com.qpoos.erp.accounting.chartofaccount.setup.AccountingBootstrapService;
 import com.qpoos.erp.auth.config.AuthProperties;
 import com.qpoos.erp.common.security.JwtService;
 import com.qpoos.erp.company.dto.CompanyAuthResponse;
@@ -112,7 +112,8 @@ public class CompanyService {
                 .filter(c -> c.id().equals(companyId))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Company not found"));
-        var user = userRepository.getById(userId);
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
         var token = jwtService.createAccessToken(user, companyId);
         return CompanyAuthResponse.bearer(token, properties.accessTokenSeconds());
     }

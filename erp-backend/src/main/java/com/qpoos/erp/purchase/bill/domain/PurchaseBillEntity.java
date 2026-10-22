@@ -4,7 +4,7 @@ import com.qpoos.erp.common.term.PaymentTermEntity;
 import com.qpoos.erp.company.domain.CompanyEntity;
 import com.qpoos.erp.purchase.order.domain.PurchaseOrderEntity;
 import com.qpoos.erp.purchase.shared.domain.PurchaseBillStatus;
-import com.qpoos.erp.vendor.domain.VendorEntity;
+import com.qpoos.erp.purchase.vendor.domain.VendorEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

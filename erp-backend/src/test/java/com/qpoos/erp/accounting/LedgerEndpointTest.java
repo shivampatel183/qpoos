@@ -1,7 +1,6 @@
 package com.qpoos.erp.accounting;
 
-import com.qpoos.erp.accounting.domain.NormalBalance;
-import com.qpoos.erp.accounting.accountcatalog.infrastructure.AccountTypeDefinitionRepository;
+import com.qpoos.erp.accounting.chartofaccount.accountcatalog.infrastructure.AccountTypeDefinitionRepository;
 import com.qpoos.erp.common.security.JwtService;
 import com.qpoos.erp.company.application.CompanyService;
 import com.qpoos.erp.company.dto.CompanyRequest;

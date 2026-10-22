@@ -1,6 +1,6 @@
 package com.qpoos.erp.purchase.bill.domain;
 
-import com.qpoos.erp.product.domain.ProductEntity;
+import com.qpoos.erp.inventory.product.domain.ProductEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

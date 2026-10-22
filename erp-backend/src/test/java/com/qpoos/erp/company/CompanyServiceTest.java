@@ -1,6 +1,6 @@
 package com.qpoos.erp.company;
 
-import com.qpoos.erp.accounting.setup.AccountingBootstrapService;
+import com.qpoos.erp.accounting.chartofaccount.setup.AccountingBootstrapService;
 import com.qpoos.erp.auth.config.AuthProperties;
 import com.qpoos.erp.common.security.JwtService;
 import com.qpoos.erp.company.dto.CompanyRequest;
@@ -20,7 +20,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;

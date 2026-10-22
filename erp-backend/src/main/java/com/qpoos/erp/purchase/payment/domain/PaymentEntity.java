@@ -1,8 +1,8 @@
 package com.qpoos.erp.purchase.payment.domain;
 
-import com.qpoos.erp.accounting.ledger.domain.LedgerEntity;
+import com.qpoos.erp.accounting.chartofaccount.ledger.domain.LedgerEntity;
 import com.qpoos.erp.company.domain.CompanyEntity;
-import com.qpoos.erp.vendor.domain.VendorEntity;
+import com.qpoos.erp.purchase.vendor.domain.VendorEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

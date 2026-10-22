@@ -1,7 +1,7 @@
 package com.qpoos.erp.purchase.payment.domain;
 
 import com.qpoos.erp.company.domain.CompanyEntity;
-import com.qpoos.erp.purchase.transaction.domain.TransactionEntity;
+import com.qpoos.erp.purchase.expense.domain.TransactionEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

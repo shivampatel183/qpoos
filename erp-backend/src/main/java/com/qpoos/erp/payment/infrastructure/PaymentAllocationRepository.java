@@ -1,6 +1,6 @@
-package com.qpoos.erp.purchase.payment.infrastructure;
+package com.qpoos.erp.payment.infrastructure;
 
-import com.qpoos.erp.purchase.payment.domain.PaymentAllocationEntity;
+import com.qpoos.erp.payment.domain.PaymentAllocationEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

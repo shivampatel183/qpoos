@@ -1,4 +1,4 @@
-package com.qpoos.erp.purchase.payment.domain;
+package com.qpoos.erp.payment.domain;
 
 public enum PaymentMethod {
     CASH,

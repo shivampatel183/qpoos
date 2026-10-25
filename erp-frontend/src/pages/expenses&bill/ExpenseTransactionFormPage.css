@@ -5,10 +5,6 @@
     gap: 14px;
 }
 
-.expense-transaction-form-page .purchase-order-page__back {
-    align-self: flex-start;
-}
-
 .expense-transaction-form-page__loading {
     display: flex;
     align-items: center;

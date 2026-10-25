@@ -39,7 +39,7 @@ A purchase order is an operational commitment to a vendor. It does not create a 
 Recommended statuses:
 
 ```text
-DRAFT, SENT, APPROVED, PARTIALLY_RECEIVED, RECEIVED, CANCELLED, CLOSED
+DRAFT, SENT, APPROVED, RECEIVED, CANCELLED, CLOSED
 ```
 
 ### 1.3 Purchase Bill

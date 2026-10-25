@@ -1,11 +1,10 @@
 package com.qpoos.erp.accounting;
 
-import com.qpoos.erp.accounting.ledger.infrastructure.LedgerRepository;
-import com.qpoos.erp.accounting.accountcatalog.infrastructure.AccountTypeDefinitionRepository;
-import com.qpoos.erp.accounting.accountgroup.infrastructure.AccountGroupRepository;
-import com.qpoos.erp.accounting.accounttype.infrastructure.AccountTypeRepository;
-import com.qpoos.erp.accounting.ledger.infrastructure.LedgerRepository;
-import com.qpoos.erp.accounting.setup.AccountingBootstrapService;
+import com.qpoos.erp.accounting.chartofaccount.ledger.infrastructure.LedgerRepository;
+import com.qpoos.erp.accounting.chartofaccount.accountcatalog.infrastructure.AccountTypeDefinitionRepository;
+import com.qpoos.erp.accounting.chartofaccount.accountgroup.infrastructure.AccountGroupRepository;
+import com.qpoos.erp.accounting.chartofaccount.accounttype.infrastructure.AccountTypeRepository;
+import com.qpoos.erp.accounting.chartofaccount.setup.AccountingBootstrapService;
 import com.qpoos.erp.company.domain.CompanyEntity;
 import com.qpoos.erp.company.infrastructure.CompanyRepository;
 import com.qpoos.erp.company.application.CompanyService;

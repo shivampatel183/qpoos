@@ -21,7 +21,7 @@ class DocumentStatusRulesTest {
         assertThatNoException().isThrownBy(() ->
                 DocumentStatusRules.requirePurchaseOrderTransition(
                         PurchaseOrderStatus.APPROVED,
-                        PurchaseOrderStatus.PARTIALLY_RECEIVED
+                        PurchaseOrderStatus.RECEIVED
                 )
         );
     }

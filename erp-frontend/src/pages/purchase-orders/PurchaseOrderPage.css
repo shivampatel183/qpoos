@@ -3,6 +3,96 @@
   color: var(--text-primary);
 }
 
+.purchase-order-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 132px;
+}
+
+.purchase-order-stage__badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 23px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--bg-app);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.purchase-order-stage__badge--draft {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.purchase-order-stage__badge--sent {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.purchase-order-stage__badge--approved {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.purchase-order-stage__badge--received,
+.purchase-order-stage__badge--closed {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.purchase-order-stage__badge--cancelled {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.purchase-order-stage__track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 112px;
+  height: 8px;
+}
+
+.purchase-order-stage__track::before {
+  position: absolute;
+  right: 4px;
+  left: 4px;
+  height: 2px;
+  background: var(--border-light);
+  content: "";
+}
+
+.purchase-order-stage__step {
+  z-index: 1;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--border-light);
+  border-radius: 50%;
+  background: var(--bg-panel);
+}
+
+.purchase-order-stage__step--complete {
+  border-color: var(--brand-primary);
+  background: var(--brand-primary);
+}
+
+.purchase-order-stage__step--current {
+  width: 9px;
+  height: 9px;
+  box-shadow: 0 0 0 2px var(--bg-panel), 0 0 0 3px var(--brand-primary);
+}
+
+.purchase-order-stage__detail {
+  color: var(--text-secondary);
+  font-size: 10px;
+}
+
 .purchase-order-page__loading {
   display: flex;
   align-items: center;
@@ -147,7 +237,7 @@
 
 .purchase-order-form__save,
 .purchase-order-form__section-title button,
-.purchase-order-form__actions button {
+.purchase-order-form__actions button:not(.btn-success):not(.btn-danger) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -166,7 +256,7 @@
 
 .purchase-order-form__save:hover,
 .purchase-order-form__section-title button:hover,
-.purchase-order-form__actions button:hover {
+.purchase-order-form__actions button:not(.btn-success):not(.btn-danger):hover {
   background: var(--brand-dark-hover);
 }
 
@@ -175,7 +265,7 @@
   align-items: center;
   gap: 8px;
 }
-.purchase-order-form__actions button:first-child {
+.purchase-order-form__actions button:first-child:not(.btn-success):not(.btn-danger) {
   background: var(--bg-app);
   color: var(--text-primary);
   border: 1px solid var(--border-light);

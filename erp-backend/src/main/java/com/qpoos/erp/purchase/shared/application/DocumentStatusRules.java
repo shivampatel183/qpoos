@@ -18,11 +18,8 @@ public final class DocumentStatusRules {
                     || next == PurchaseOrderStatus.CANCELLED;
             case SENT -> next == PurchaseOrderStatus.APPROVED
                     || next == PurchaseOrderStatus.CANCELLED;
-            case APPROVED -> next == PurchaseOrderStatus.PARTIALLY_RECEIVED
-                    || next == PurchaseOrderStatus.RECEIVED
+            case APPROVED -> next == PurchaseOrderStatus.RECEIVED
                     || next == PurchaseOrderStatus.CANCELLED;
-            case PARTIALLY_RECEIVED -> next == PurchaseOrderStatus.RECEIVED
-                    || next == PurchaseOrderStatus.CLOSED;
             case RECEIVED -> next == PurchaseOrderStatus.CLOSED;
             case CANCELLED, CLOSED -> false;
         };

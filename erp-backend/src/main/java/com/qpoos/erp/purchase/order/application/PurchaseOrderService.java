@@ -8,8 +8,8 @@ import com.qpoos.erp.common.security.SecurityUtils;
 import com.qpoos.erp.common.term.PaymentTermEntity;
 import com.qpoos.erp.common.term.PaymentTermRepository;
 import com.qpoos.erp.company.domain.CompanyEntity;
-import com.qpoos.erp.product.domain.ProductEntity;
-import com.qpoos.erp.product.infrastructure.ProductRepository;
+import com.qpoos.erp.inventory.product.domain.ProductEntity;
+import com.qpoos.erp.inventory.product.infrastructure.ProductRepository;
 import com.qpoos.erp.purchase.order.domain.PurchaseOrderEntity;
 import com.qpoos.erp.purchase.order.domain.PurchaseOrderLineEntity;
 import com.qpoos.erp.purchase.order.dto.DeliveryAddressRequest;
@@ -22,8 +22,7 @@ import com.qpoos.erp.purchase.order.infrastructure.PurchaseOrderLineRepository;
 import com.qpoos.erp.purchase.order.infrastructure.PurchaseOrderRepository;
 import com.qpoos.erp.purchase.shared.application.DocumentStatusRules;
 import com.qpoos.erp.purchase.shared.domain.PurchaseOrderStatus;
-import com.qpoos.erp.vendor.domain.VendorEntity;
-import com.qpoos.erp.vendor.infrastructure.VendorRepository;
+import com.qpoos.erp.purchase.vendor.infrastructure.VendorRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -104,6 +103,16 @@ public class PurchaseOrderService {
     @Transactional
     public PurchaseOrderResponse approve(Long id) {
         return transition(id, PurchaseOrderStatus.APPROVED);
+    }
+
+    @Transactional
+    public PurchaseOrderResponse receive(Long id) {
+        return transition(id, PurchaseOrderStatus.RECEIVED);
+    }
+
+    @Transactional
+    public PurchaseOrderResponse close(Long id) {
+        return transition(id, PurchaseOrderStatus.CLOSED);
     }
 
     @Transactional

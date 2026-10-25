@@ -51,6 +51,8 @@ public record TransactionRequest(
 
         LocalDate paymentDate,
 
+        Long paymentLedgerId,
+
         PaymentStatus paymentStatus,
 
         @Size(max = 4000)

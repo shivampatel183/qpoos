@@ -5,31 +5,8 @@
   border: 1px solid var(--border-light);
   border-radius: 8px;
   background: var(--bg-panel);
-  overflow-x: auto;
-}
-
-/* Global scrollbar styling */
-.transaction-form-page__panel::-webkit-scrollbar {
-  height: 8px;
-}
-
-.transaction-form-page__panel::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.transaction-form-page__panel::-webkit-scrollbar-thumb {
-  background: var(--border-dark);
-  border-radius: 4px;
-}
-
-.transaction-form-page__panel::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
-}
-
-/* Firefox scrollbar */
-.transaction-form-page__panel {
-  scrollbar-color: var(--border-dark) transparent;
-  scrollbar-width: thin;
+  min-width: 0;
+  overflow-x: clip;
 }
 
 .transaction-form-page__header {
@@ -58,6 +35,7 @@
   display: flex;
   flex-direction: column;
   gap: 22px;
+  min-width: 0;
 }
 
 .transaction-form__loading {
@@ -73,6 +51,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
 }
 
 .transaction-form__section + .transaction-form__section {
@@ -183,7 +162,8 @@
     5rem 5rem 7rem 6rem 5rem 8rem 2.5rem;
   --transaction-line-min-width: 76rem;
   --transaction-line-target-min: 14rem;
-  --transaction-line-description-min: 18rem;
+  width: 100%;
+  min-width: 0;
   max-width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
@@ -196,7 +176,6 @@
     4.5rem 4.5rem 6rem 6rem 5rem 7.2rem 2.5rem;
   --transaction-line-min-width: 64rem;
   --transaction-line-target-min: 12rem;
-  --transaction-line-description-min: 14rem;
 }
 
 .transaction-form__lines-scroll--l {
@@ -204,7 +183,12 @@
     6rem 6rem 8rem 7rem 6rem 9rem 2.75rem;
   --transaction-line-min-width: 92rem;
   --transaction-line-target-min: 18rem;
-  --transaction-line-description-min: 24rem;
+}
+
+.transaction-form__lines-scroll--expense {
+  --transaction-line-columns: minmax(18rem, 1.5fr) 7rem 6rem 6rem 8rem 2.5rem;
+  --transaction-line-min-width: 54rem;
+  --transaction-line-target-min: 18rem;
 }
 
 .transaction-form__lines-scroll > .transaction-form__line-header,
@@ -221,8 +205,6 @@
 }
 
 .transaction-form__line-header-grid {
-  --transaction-line-columns: 3rem minmax(14rem, 1.1fr) minmax(18rem, 1.4fr)
-    5rem 5rem 7rem 6rem 5rem 8rem 2.5rem;
   display: grid;
   grid-template-columns: var(--transaction-line-columns);
   grid-template-areas: "type target description qty unit rate discount tax amount delete";
@@ -251,14 +233,17 @@
 }
 
 .transaction-form__line-grid {
-  --transaction-line-columns: 3rem minmax(14rem, 1.1fr) minmax(18rem, 1.4fr)
-    5rem 5rem 7rem 6rem 5rem 8rem 2.5rem;
   display: grid;
   grid-template-columns: var(--transaction-line-columns);
   grid-template-areas: "type target description qty unit rate discount tax amount delete";
   gap: 12px;
   align-items: center;
   min-width: var(--transaction-line-min-width, 76rem);
+}
+
+.transaction-form__lines-scroll--expense .transaction-form__line-header-grid,
+.transaction-form__lines-scroll--expense .transaction-form__line-grid {
+  grid-template-areas: "target rate discount tax amount delete";
 }
 
 /* Scrollbar styling for line grid */
@@ -472,9 +457,18 @@
       "delete delete";
   }
 
-  .transaction-form__field--wide,
+  .transaction-form__field--wide {
+    grid-column: 1 / -1;
+  }
+
   .transaction-form__line-description {
     grid-column: 1 / -1;
+  }
+
+  .transaction-form__lines-scroll--expense .transaction-form__line-grid,
+  .transaction-form__lines-scroll--expense .transaction-form__line-header-grid {
+    grid-template-columns: var(--transaction-line-columns);
+    grid-template-areas: "target rate discount tax amount delete";
   }
 }
 
@@ -505,12 +499,16 @@
     display: none;
   }
 
-  .transaction-form__line {
+  .transaction-form__lines-scroll--expense .transaction-form__line-header {
+    display: block;
+  }
+
+  .transaction-form__lines-scroll--expense .transaction-form__line {
     border-radius: 8px;
     margin-top: 0;
   }
 
-  .transaction-form__line + .transaction-form__line {
+  .transaction-form__lines-scroll--expense .transaction-form__line + .transaction-form__line {
     margin-top: 12px;
   }
 }

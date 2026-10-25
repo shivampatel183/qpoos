@@ -24,6 +24,7 @@ public record PurchaseBillResponse(
         BigDecimal roundOff,
         BigDecimal totalAmount,
         Long postedVoucherId,
+        Long journalEntryId,
         String notes,
         String attachments,
         OffsetDateTime createdAt,

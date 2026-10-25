@@ -34,6 +34,11 @@ const ChartOfAccountsPage = lazy(() =>
     }),
   ),
 );
+const JournalEntriesPage = lazy(() =>
+  import("./pages/accounting/journal/JournalEntriesPage").then((module) => ({
+    default: module.JournalEntriesPage,
+  })),
+);
 const VendorPage = lazy(() =>
   import("./pages/expenses&bill/vendor/vendor").then((module) => ({
     default: module.VendorPage,
@@ -127,6 +132,10 @@ export const router = createBrowserRouter([
                   {
                     path: "accounting/chart",
                     element: page(<ChartOfAccountsPage />),
+                  },
+                  {
+                    path: "accounting/journal",
+                    element: page(<JournalEntriesPage />),
                   },
                   {
                     path: "expenses/all",

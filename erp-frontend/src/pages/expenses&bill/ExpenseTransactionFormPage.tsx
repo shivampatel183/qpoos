@@ -57,7 +57,7 @@ export function ExpenseTransactionFormPage() {
             {loading ? (
                 <div className="expense-transaction-form-page__loading">
                     <Spinner size={22} />
-                    <span>Loading transaction...</span>
+                    <span>Loading expense...</span>
                 </div>
             ) : (
                 <>
@@ -66,6 +66,7 @@ export function ExpenseTransactionFormPage() {
                         onBack={goBack}
                         onCancel={goBack}
                         formId="transaction-form"
+                        saveLabel="Save & Post"
                     />
                     <TransactionForm
                         transaction={transaction ?? undefined}

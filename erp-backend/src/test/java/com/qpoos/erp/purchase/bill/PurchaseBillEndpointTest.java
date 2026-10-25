@@ -1,6 +1,7 @@
 package com.qpoos.erp.purchase.bill;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.qpoos.erp.common.security.JwtService;
 import com.qpoos.erp.company.application.CompanyService;
 import com.qpoos.erp.company.domain.CompanyEntity;
@@ -87,7 +88,28 @@ class PurchaseBillEndpointTest {
                         .header("Authorization", bearer(tokenA)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("POSTED"))
-                .andExpect(jsonPath("$.postedVoucherId").value(billId));
+                .andExpect(jsonPath("$.postedVoucherId").isNumber())
+                .andExpect(jsonPath("$.journalEntryId").isNumber());
+
+        MvcResult journalList = mockMvc.perform(get("/api/accounting/journals")
+                        .header("Authorization", bearer(tokenA)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].sourceType").value("PURCHASE_BILL"))
+                .andExpect(jsonPath("$[0].sourceDocumentId").value(billId))
+                .andExpect(jsonPath("$[0].lines.length()").value(3))
+                .andReturn();
+        JsonNode journalLines = objectMapper.readTree(journalList.getResponse().getContentAsString())
+                .get(0).get("lines");
+        assertJournalAmount(journalLines, "INVENTORY_ASSET", "debitAmount", "200.00");
+        assertJournalAmount(journalLines, "GST_INPUT_CREDIT", "debitAmount", "36.00");
+        assertJournalAmount(journalLines, "SUPPLIER_PAYABLE", "creditAmount", "236.00");
+
+        MvcResult ledgerResult = mockMvc.perform(get("/api/accounting/ledgers")
+                        .header("Authorization", bearer(tokenA)))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode ledgers = objectMapper.readTree(ledgerResult.getResponse().getContentAsString());
+        assertLedgerBalance(ledgers, "INVENTORY_ASSET", "200.00");
 
         mockMvc.perform(put("/api/purchase-bills/{id}", billId)
                         .header("Authorization", bearer(tokenA))
@@ -173,5 +195,31 @@ class PurchaseBillEndpointTest {
 
     private String bearer(String token) {
         return "Bearer " + token;
+    }
+
+    private void assertJournalAmount(JsonNode lines, String ledgerCode, String side, String expected) {
+        for (JsonNode line : lines) {
+            if (ledgerCode.equals(line.get("ledgerCode").asText())) {
+                org.junit.jupiter.api.Assertions.assertEquals(
+                        0,
+                        new BigDecimal(expected).compareTo(line.get(side).decimalValue())
+                );
+                return;
+            }
+        }
+        throw new AssertionError("Journal line not found for ledger " + ledgerCode);
+    }
+
+    private void assertLedgerBalance(JsonNode ledgers, String ledgerCode, String expected) {
+        for (JsonNode ledger : ledgers) {
+            if (ledgerCode.equals(ledger.get("code").asText())) {
+                org.junit.jupiter.api.Assertions.assertEquals(
+                        0,
+                        new BigDecimal(expected).compareTo(ledger.get("balance").decimalValue())
+                );
+                return;
+            }
+        }
+        throw new AssertionError("Ledger not found: " + ledgerCode);
     }
 }

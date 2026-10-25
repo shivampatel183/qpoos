@@ -2,11 +2,14 @@ package com.qpoos.erp.accounting.chartofaccount.ledger.application;
 
 import com.qpoos.erp.accounting.chartofaccount.ledger.domain.LedgerEntity;
 import com.qpoos.erp.accounting.chartofaccount.ledger.infrastructure.LedgerRepository;
+import com.qpoos.erp.accounting.journal.infrastructure.JournalLineRepository;
+import com.qpoos.erp.accounting.journal.infrastructure.LedgerMovement;
 import com.qpoos.erp.accounting.chartofaccount.accountcatalog.domain.AccountTypeDefinitionEntity;
 import com.qpoos.erp.accounting.chartofaccount.accountcatalog.infrastructure.AccountTypeDefinitionRepository;
 import com.qpoos.erp.accounting.chartofaccount.accountgroup.domain.AccountGroupEntity;
 import com.qpoos.erp.accounting.chartofaccount.accountgroup.infrastructure.AccountGroupRepository;
 import com.qpoos.erp.accounting.chartofaccount.accounttype.domain.AccountTypeEntity;
+import com.qpoos.erp.accounting.chartofaccount.domain.NormalBalance;
 import com.qpoos.erp.accounting.chartofaccount.ledger.dto.LedgerRequest;
 import com.qpoos.erp.accounting.chartofaccount.ledger.dto.LedgerResponse;
 import com.qpoos.erp.common.security.SecurityUtils;
@@ -26,6 +29,7 @@ import java.util.UUID;
 public class LedgerService {
 
     private final LedgerRepository ledgerRepository;
+    private final JournalLineRepository journalLineRepository;
     private final AccountGroupRepository accountGroupRepository;
     private final AccountTypeDefinitionRepository definitionRepository;
     private final EntityManager entityManager;
@@ -177,6 +181,16 @@ public class LedgerService {
         BigDecimal openingBalance = ledger.getOpeningBalance() == null
                 ? BigDecimal.ZERO
                 : ledger.getOpeningBalance();
+        LedgerMovement movement = journalLineRepository.summarizePostedActivity(
+                ledger.getId(),
+                ledger.getCompany().getId(),
+                ledger.getOpeningBalanceAsOfDate()
+        ).orElse(null);
+        BigDecimal debitTotal = movement == null ? BigDecimal.ZERO : movement.getDebitTotal();
+        BigDecimal creditTotal = movement == null ? BigDecimal.ZERO : movement.getCreditTotal();
+        BigDecimal balance = ledger.getNormalBalance() == NormalBalance.DEBIT
+                ? openingBalance.add(debitTotal).subtract(creditTotal)
+                : openingBalance.add(creditTotal).subtract(debitTotal);
 
         return new LedgerResponse(
                 ledger.getId(),
@@ -192,10 +206,11 @@ public class LedgerService {
                 ledger.getDescription(),
                 openingBalance,
                 ledger.getOpeningBalanceAsOfDate(),
-                openingBalance,
+                balance,
                 ledger.getLedgerType(),
                 ledger.getNormalBalance(),
                 ledger.getActive(),
+                ledger.getPostingAllowed(),
                 ledger.getSystemDefined()
         );
     }

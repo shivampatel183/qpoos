@@ -25,6 +25,7 @@ public record LedgerResponse(
         LedgerType ledgerType,
         NormalBalance normalBalance,
         Boolean active,
+        Boolean postingAllowed,
         Boolean systemDefined
 ) {
 }

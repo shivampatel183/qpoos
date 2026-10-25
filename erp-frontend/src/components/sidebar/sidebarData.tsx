@@ -100,11 +100,11 @@ export const secondaryNavItems: SecondaryNavItem[] = [
   },
   {
     id: "expenses",
-    label: "Expenses & Bills",
+    label: "Expenses",
     path: "/expenses",
     icon: <CreditCard size={18} strokeWidth={2} />,
     children: [
-      { id: "exp-all", label: "All Expenses", path: "/expenses/all" },
+      { id: "exp-all", label: "Expenses", path: "/expenses/all" },
       { id: "exp-bills", label: "Bills", path: "/purchase-bills" },
       {
         id: "purchase-orders",

@@ -56,6 +56,7 @@ const createdAccount: Ledger = {
     ledgerType: 'CASH',
     normalBalance: 'DEBIT',
     active: true,
+    postingAllowed: true,
     systemDefined: false,
 };
 

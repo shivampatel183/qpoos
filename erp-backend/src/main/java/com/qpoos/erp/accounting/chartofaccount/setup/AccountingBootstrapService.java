@@ -78,10 +78,14 @@ public class AccountingBootstrapService implements ApplicationRunner {
         ensureLedger(company, definitions.get("BANK"), "BANK_ACCOUNT", "Bank Account", openingDate);
         ensureLedger(company, definitions.get("ACCOUNTS_RECEIVABLE"), "CUSTOMER_RECEIVABLE", "Customer Receivable", openingDate);
         ensureLedger(company, definitions.get("ACCOUNTS_PAYABLE"), "SUPPLIER_PAYABLE", "Supplier Payable", openingDate);
+        ensureLedger(company, definitions.get("OTHER_CURRENT_ASSETS"), "INVENTORY_ASSET", "Inventory", openingDate);
+        ensureLedger(company, definitions.get("GST_RECEIVABLE"), "GST_INPUT_CREDIT", "GST Input Credit", openingDate);
         ensureLedger(company, definitions.get("GST_PAYABLE"), "OUTPUT_GST_PAYABLE", "Output GST Payable", openingDate);
         ensureLedger(company, definitions.get("INCOME"), "DOMESTIC_SALES", "Domestic Sales", openingDate);
+        ensureLedger(company, definitions.get("OTHER_INCOME"), "ROUND_OFF_GAIN", "Round Off Gain", openingDate);
         ensureLedger(company, definitions.get("COST_OF_GOODS_SOLD"), "PURCHASE_ACCOUNT", "Purchase Account", openingDate);
         ensureLedger(company, definitions.get("EXPENSES"), "RENT_EXPENSE", "Rent Expense", openingDate);
+        ensureLedger(company, definitions.get("OTHER_EXPENSE"), "ROUND_OFF_LOSS", "Round Off Loss", openingDate);
         ensureLedger(company, definitions.get("EQUITY"), "CAPITAL_ACCOUNT", "Capital Account", openingDate);
 
         ledgerRepository.findAllByCompany_Id(company.getId()).forEach(ledger -> {

@@ -57,6 +57,11 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.update(transactionId, request));
     }
 
+    @PostMapping("/{transactionId}/post")
+    public ResponseEntity<TransactionResponse> post(@PathVariable Long transactionId) {
+        return ResponseEntity.ok(transactionService.post(transactionId));
+    }
+
     @DeleteMapping("/{transactionId}")
     public ResponseEntity<MessageResponse> delete(
             @PathVariable Long transactionId

@@ -1,5 +1,6 @@
 package com.qpoos.erp.purchase.bill.application;
 
+import com.qpoos.erp.accounting.journal.application.AccountingPostingService;
 import com.qpoos.erp.common.money.MoneyCalculator;
 import com.qpoos.erp.common.number.DocumentNumberService;
 import com.qpoos.erp.common.number.DocumentNumberType;
@@ -46,6 +47,7 @@ public class PurchaseBillService {
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final DocumentNumberService documentNumberService;
     private final EntityManager entityManager;
+    private final AccountingPostingService accountingPostingService;
 
     @Transactional
     public PurchaseBillResponse create(PurchaseBillRequest request) {
@@ -98,20 +100,8 @@ public class PurchaseBillService {
 
     @Transactional
     public PurchaseBillResponse post(Long id) {
-        PurchaseBillEntity bill = getBill(SecurityUtils.getCompanyId(), id);
-        if (bill.getStatus() == PurchaseBillStatus.POSTED) {
-            if (bill.getPostedVoucherId() == null) {
-                bill.setPostedVoucherId(bill.getId());
-                bill.setUpdatedBy(SecurityUtils.getUserId());
-                purchaseBillRepository.save(bill);
-            }
-            return toResponse(bill);
-        }
-        DocumentStatusRules.requirePurchaseBillTransition(bill.getStatus(), PurchaseBillStatus.POSTED);
-        bill.setStatus(PurchaseBillStatus.POSTED);
-        bill.setPostedVoucherId(bill.getId());
-        bill.setUpdatedBy(SecurityUtils.getUserId());
-        return toResponse(purchaseBillRepository.save(bill));
+        accountingPostingService.postPurchaseBill(id);
+        return toResponse(getBill(SecurityUtils.getCompanyId(), id));
     }
 
     @Transactional
@@ -204,7 +194,9 @@ public class PurchaseBillService {
                 bill.getPaymentTerm() == null ? null : bill.getPaymentTerm().getCode(), bill.getDueDate(),
                 bill.getPurchaseOrder() == null ? null : bill.getPurchaseOrder().getId(), bill.getStatus(),
                 bill.getSubtotal(), bill.getDiscountAmount(), bill.getTaxAmount(), bill.getRoundOff(),
-                bill.getTotalAmount(), bill.getPostedVoucherId(), bill.getNotes(), bill.getAttachments(),
+                bill.getTotalAmount(), bill.getPostedVoucherId(),
+                bill.getJournalEntry() == null ? null : bill.getJournalEntry().getId(),
+                bill.getNotes(), bill.getAttachments(),
                 bill.getCreatedAt(), bill.getUpdatedAt(), lines
         );
     }

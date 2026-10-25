@@ -4,7 +4,8 @@ public enum DocumentNumberType {
     EXPENSE("EXP"),
     PURCHASE_ORDER("PO"),
     PURCHASE_BILL("BILL"),
-    PAYMENT("PAY");
+    PAYMENT("PAY"),
+    JOURNAL("JRN");
 
     private final String prefix;
 

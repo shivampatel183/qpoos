@@ -1,6 +1,7 @@
 package com.qpoos.erp.purchase.bill.domain;
 
 import com.qpoos.erp.common.term.PaymentTermEntity;
+import com.qpoos.erp.accounting.journal.domain.JournalEntryEntity;
 import com.qpoos.erp.company.domain.CompanyEntity;
 import com.qpoos.erp.purchase.order.domain.PurchaseOrderEntity;
 import com.qpoos.erp.purchase.shared.domain.PurchaseBillStatus;
@@ -111,6 +112,10 @@ public class PurchaseBillEntity {
 
     @Column(name = "posted_voucher_id")
     private Long postedVoucherId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "journal_entry_id", unique = true)
+    private JournalEntryEntity journalEntry;
 
     @Column(name = "created_by")
     private UUID createdBy;

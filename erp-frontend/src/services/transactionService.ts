@@ -26,8 +26,11 @@ export interface TransactionListItem {
   vendorName: string | null;
   dueDate: string | null;
   paymentDate: string | null;
+  paymentLedgerId: number | null;
+  paymentLedgerName: string | null;
   totalAmount: number;
   paymentStatus: PaymentStatus;
+  journalEntryId: number | null;
 }
 
 export interface TransactionLine {
@@ -91,6 +94,7 @@ export interface TransactionPayload {
   roundOff: number;
   totalAmount: number;
   paymentDate: string | null;
+  paymentLedgerId: number | null;
   paymentStatus: PaymentStatus;
   notes: string | null;
   attachments: string | null;
@@ -118,5 +122,9 @@ export const transactionService = {
 
   delete(id: number): Promise<void> {
     return apiClient.delete<void>(API.transactions.delete(id));
+  },
+
+  post(id: number): Promise<Transaction> {
+    return apiClient.post<Transaction>(API.transactions.post(id));
   },
 };

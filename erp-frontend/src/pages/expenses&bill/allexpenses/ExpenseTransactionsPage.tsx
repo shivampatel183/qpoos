@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Edit2, Plus, Receipt, ShoppingCart, Trash2 } from "lucide-react";
+import { Edit2, Plus, Trash2 } from "lucide-react";
 import { DataTable } from "@/components/ui/DataTable";
 import type { DataTableColumn } from "@/components/ui/DataTable";
 import { useMessagePopup } from "@/components/ui/MessagePopup";
@@ -8,9 +8,7 @@ import { useCompany } from "@/context/CompanyContext";
 import { ApiError } from "@/lib/apiClient";
 import {
   transactionService,
-  type PaymentStatus,
   type TransactionListItem,
-  type TransactionType,
 } from "@/services/transactionService";
 import "./ExpenseTransactionsPage.css";
 
@@ -36,32 +34,6 @@ function formatDate(value: string | null): string {
   }).format(new Date(`${value}T00:00:00`));
 }
 
-const TYPE_LABELS: Record<TransactionType, string> = {
-  PURCHASE_BILL: "Purchase Bill",
-  PURCHASE_ORDER: "Purchase Order",
-  PURCHASE_RETURN: "Purchase Return",
-  EXPENSE: "Expense",
-  PAYMENT: "Payment",
-};
-
-const STATUS_LABELS: Record<PaymentStatus, string> = {
-  UNPAID: "Unpaid",
-  PARTIALLY_PAID: "Partially Paid",
-  PAID: "Paid",
-  OVERDUE: "Overdue",
-  CANCELLED: "Cancelled",
-};
-
-const STATUS_CLASS: Record<PaymentStatus, string> = {
-  UNPAID: "expense-transactions__status expense-transactions__status--unpaid",
-  PARTIALLY_PAID:
-    "expense-transactions__status expense-transactions__status--partial",
-  PAID: "expense-transactions__status expense-transactions__status--paid",
-  OVERDUE: "expense-transactions__status expense-transactions__status--overdue",
-  CANCELLED:
-    "expense-transactions__status expense-transactions__status--cancelled",
-};
-
 export function ExpenseTransactionsPage() {
   const navigate = useNavigate();
   const { currentCompany } = useCompany();
@@ -77,7 +49,7 @@ export function ExpenseTransactionsPage() {
       } catch (error) {
         if (!signal?.aborted) {
           messagePopup.error(
-            getErrorMessage(error, "Failed to load transactions."),
+            getErrorMessage(error, "Failed to load expenses."),
           );
         }
       } finally {
@@ -97,14 +69,6 @@ export function ExpenseTransactionsPage() {
     navigate("/expenses/new");
   }
 
-  function openPurchaseOrderPage() {
-    navigate("/purchase-orders/new");
-  }
-
-  function openBillPage() {
-    navigate("/purchase-bills/new");
-  }
-
   function openEditPage(transaction: TransactionListItem) {
     navigate(`/expenses/${transaction.id}/edit`);
   }
@@ -112,7 +76,7 @@ export function ExpenseTransactionsPage() {
   async function handleDelete(transaction: TransactionListItem) {
     if (
       !window.confirm(
-        `Delete this transaction dated ${formatDate(transaction.transactionDate)}?`,
+        `Delete this expense dated ${formatDate(transaction.transactionDate)}?`,
       )
     )
       return;
@@ -121,46 +85,25 @@ export function ExpenseTransactionsPage() {
       setTransactions((current) =>
         current.filter((item) => item.id !== transaction.id),
       );
-      messagePopup.success("Transaction deleted successfully.");
+      messagePopup.success("Expense deleted successfully.");
     } catch (error) {
       messagePopup.error(
-        getErrorMessage(error, "Failed to delete transaction."),
+        getErrorMessage(error, "Failed to delete expense."),
       );
     }
   }
 
   const columns = useMemo<DataTableColumn<TransactionListItem>[]>(
     () => [
-      // {
-      //     key: 'billNo',
-      //     header: 'Bill',
-      //     render: (transaction) => (
-      //         <div className="expense-transactions__name">
-      //             <strong>{transaction.billNo || '-'}</strong>
-      //             <span>{formatDate(transaction.transactionDate)}</span>
-      //         </div>
-      //     ),
-      // },
       {
         key: "transactionDate",
         header: "Date",
         render: (transaction) => formatDate(transaction.transactionDate),
       },
       {
-        key: "transactionType",
-        header: "Type",
-        render: (transaction) => TYPE_LABELS[transaction.transactionType],
-      },
-      {
         key: "vendorName",
-        header: "Vendor",
+        header: "Vendor / Payee",
         render: (transaction) => transaction.vendorName || "-",
-      },
-      {
-        key: "dueDate",
-        header: "Due Date",
-        hideOnMobile: true,
-        render: (transaction) => formatDate(transaction.dueDate),
       },
       {
         key: "paymentDate",
@@ -169,13 +112,16 @@ export function ExpenseTransactionsPage() {
         render: (transaction) => formatDate(transaction.paymentDate),
       },
       {
-        key: "paymentStatus",
-        header: "Status",
-        render: (transaction) => (
-          <span className={STATUS_CLASS[transaction.paymentStatus]}>
-            {STATUS_LABELS[transaction.paymentStatus]}
-          </span>
-        ),
+        key: "paymentLedgerName",
+        header: "Paid From",
+        hideOnMobile: true,
+        render: (transaction) => transaction.paymentLedgerName || "Not recorded",
+      },
+      {
+        key: "journalEntryId",
+        header: "Accounting",
+        render: (transaction) =>
+          transaction.journalEntryId === null ? "Not posted" : "Posted",
       },
       {
         key: "totalAmount",
@@ -197,12 +143,12 @@ export function ExpenseTransactionsPage() {
         data={transactions}
         columns={columns}
         rowKey="id"
-        title="Expense Transactions"
+        title="Expenses"
         loading={loading}
-        loadingText="Loading transactions..."
+        loadingText="Loading expenses..."
         onRetry={() => loadData()}
         searchable
-        searchPlaceholder="Search transactions..."
+        searchPlaceholder="Search expenses..."
         defaultSort={{ key: "transactionDate", direction: "desc" }}
         pageSize={25}
         density="compact"
@@ -210,62 +156,25 @@ export function ExpenseTransactionsPage() {
           label: "New Expense",
           icon: Plus,
           onClick: openCreatePage,
-          menu: [
-            {
-              label: "Expense",
-              icon: Plus,
-              onClick: openCreatePage,
-            },
-            {
-              label: "Purchase Order",
-              icon: ShoppingCart,
-              onClick: openPurchaseOrderPage,
-            },
-            {
-              label: "Bill",
-              icon: Receipt,
-              onClick: openBillPage,
-            },
-          ],
         }}
         actions={[]}
         moreActions={[
           {
-            label: "Edit transaction",
+            label: "Edit expense",
             icon: Edit2,
+            disabled: (transaction) => transaction.journalEntryId !== null,
             onClick: openEditPage,
           },
           {
-            label: "Delete transaction",
+            label: "Delete expense",
             icon: Trash2,
             danger: true,
+            disabled: (transaction) => transaction.journalEntryId !== null,
             onClick: handleDelete,
           },
         ]}
-        filters={[
-          {
-            key: "transactionType",
-            label: "Type",
-            allLabel: "All types",
-            getValue: (transaction) => transaction.transactionType,
-            options: Object.entries(TYPE_LABELS).map(([value, label]) => ({
-              value,
-              label,
-            })),
-          },
-          {
-            key: "paymentStatus",
-            label: "Status",
-            allLabel: "All statuses",
-            getValue: (transaction) => transaction.paymentStatus,
-            options: Object.entries(STATUS_LABELS).map(([value, label]) => ({
-              value,
-              label,
-            })),
-          },
-        ]}
-        emptyTitle="No transactions found"
-        emptyMessage="Create your first expense transaction for this company."
+        emptyTitle="No expenses found"
+        emptyMessage="Create your first expense for this company."
         emptyAction={{
           label: "New Expense",
           icon: Plus,

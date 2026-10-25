@@ -46,6 +46,7 @@ export interface PurchaseBill extends PurchaseBillListItem {
   taxAmount: number;
   roundOff: number;
   postedVoucherId: number | null;
+  journalEntryId: number | null;
   notes: string | null;
   attachments: string | null;
   createdAt: string;

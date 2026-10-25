@@ -15,7 +15,10 @@ public record TransactionListResponse(
         String vendorName,
         LocalDate dueDate,
         LocalDate paymentDate,
+        Long paymentLedgerId,
+        String paymentLedgerName,
         BigDecimal totalAmount,
-        PaymentStatus paymentStatus
+        PaymentStatus paymentStatus,
+        Long journalEntryId
 ) {
 }

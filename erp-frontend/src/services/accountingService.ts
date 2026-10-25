@@ -30,6 +30,7 @@ export interface Ledger {
     ledgerType: LedgerType;
     normalBalance: NormalBalance;
     active: boolean;
+    postingAllowed?: boolean;
     systemDefined: boolean;
 }
 
@@ -55,6 +56,34 @@ export interface AccountType {
     systemDefined: boolean;
 }
 
+export interface JournalLine {
+    id: number;
+    lineNo: number;
+    ledgerId: number;
+    ledgerCode: string;
+    ledgerName: string;
+    debitAmount: number;
+    creditAmount: number;
+    description: string | null;
+}
+
+export interface JournalEntry {
+    id: number;
+    companyId: string;
+    journalNumber: string;
+    accountingDate: string;
+    sourceType: 'PURCHASE_BILL' | 'EXPENSE';
+    sourceDocumentId: number;
+    entryKind: 'ORIGINAL' | 'REVERSAL';
+    narration: string;
+    status: 'POSTED';
+    createdBy: string;
+    postedBy: string;
+    createdAt: string;
+    postedAt: string;
+    lines: JournalLine[];
+}
+
 export const accountingService = {
     listLedgers(signal?: AbortSignal): Promise<Ledger[]> {
         return apiClient.get<Ledger[]>(API.accounting.ledgers, { signal });
@@ -74,5 +103,13 @@ export const accountingService = {
 
     listAccountTypes(signal?: AbortSignal): Promise<AccountType[]> {
         return apiClient.get<AccountType[]>(API.accounting.accountTypes, { signal });
+    },
+
+    listJournalEntries(signal?: AbortSignal): Promise<JournalEntry[]> {
+        return apiClient.get<JournalEntry[]>(API.accounting.journals, { signal });
+    },
+
+    getJournalEntry(id: number, signal?: AbortSignal): Promise<JournalEntry> {
+        return apiClient.get<JournalEntry>(API.accounting.journal(id), { signal });
     },
 };

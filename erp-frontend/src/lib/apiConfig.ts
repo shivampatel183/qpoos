@@ -49,6 +49,8 @@ export const API = {
   accounting: {
     ledgers: "/accounting/ledgers",
     ledger: (id: string | number) => `/accounting/ledgers/${id}`,
+    journals: "/accounting/journals",
+    journal: (id: string | number) => `/accounting/journals/${id}`,
     accountGroups: "/accounting/account-groups",
     accountTypes: "/accounting/account-types",
     transactions: "/accounting/transactions",
@@ -85,6 +87,7 @@ export const API = {
     detail: (id: string | number) => `/transactions/${id}`,
     update: (id: string | number) => `/transactions/${id}`,
     delete: (id: string | number) => `/transactions/${id}`,
+    post: (id: string | number) => `/transactions/${id}/post`,
   },
   purchaseOrders: {
     list: "/purchase-orders",

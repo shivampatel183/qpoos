@@ -1,5 +1,7 @@
 package com.qpoos.erp.purchase.expense.domain;
 
+import com.qpoos.erp.accounting.journal.domain.JournalEntryEntity;
+import com.qpoos.erp.accounting.chartofaccount.ledger.domain.LedgerEntity;
 import com.qpoos.erp.company.domain.CompanyEntity;
 import com.qpoos.erp.purchase.vendor.domain.VendorEntity;
 import jakarta.persistence.Column;
@@ -62,6 +64,14 @@ public class TransactionEntity {
 
     @Column(name = "reference_no", length = 100)
     private String referenceNo;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "journal_entry_id", unique = true)
+    private JournalEntryEntity journalEntry;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_ledger_id")
+    private LedgerEntity paymentLedger;
 
     @Builder.Default
     @Column(name = "subtotal", nullable = false, precision = 19, scale = 2)

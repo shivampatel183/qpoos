@@ -1,7 +1,9 @@
 package com.qpoos.erp.purchase.expense.application;
 
+import com.qpoos.erp.accounting.journal.application.AccountingPostingService;
 import com.qpoos.erp.accounting.chartofaccount.ledger.domain.LedgerEntity;
 import com.qpoos.erp.accounting.chartofaccount.ledger.infrastructure.LedgerRepository;
+import com.qpoos.erp.accounting.chartofaccount.domain.LedgerType;
 import com.qpoos.erp.common.security.SecurityUtils;
 import com.qpoos.erp.company.domain.CompanyEntity;
 import com.qpoos.erp.inventory.product.domain.ProductEntity;
@@ -41,13 +43,14 @@ public class TransactionService {
     private final ProductRepository productRepository;
     private final LedgerRepository ledgerRepository;
     private final EntityManager entityManager;
+    private final AccountingPostingService accountingPostingService;
 
     @Transactional
     public TransactionResponse create(TransactionRequest request) {
         UUID companyId = SecurityUtils.getCompanyId();
         UUID userId = SecurityUtils.getUserId();
 
-        validateLines(request.lines());
+        validateLines(request.lines(), request.transactionType());
 
         TransactionEntity transaction = TransactionEntity.builder()
                 .company(entityManager.getReference(CompanyEntity.class, companyId))
@@ -59,13 +62,21 @@ public class TransactionService {
 
         TransactionEntity saved = transactionRepository.save(transaction);
         saveLines(saved, request.lines(), companyId);
+        if (saved.getTransactionType() == TransactionType.EXPENSE) {
+            accountingPostingService.postExpense(saved.getId());
+            saved = transactionRepository.findByIdAndCompany_IdAndActiveTrue(saved.getId(), companyId)
+                    .orElseThrow(() -> new IllegalStateException("Saved expense could not be reloaded"));
+        }
         return toResponse(saved);
     }
 
     @Transactional
     public List<TransactionListResponse> list() {
         return transactionRepository
-                .findAllByCompany_IdAndActiveTrueOrderByTransactionDateDescIdDesc(SecurityUtils.getCompanyId())
+                .findAllByCompany_IdAndTransactionTypeAndActiveTrueOrderByTransactionDateDescIdDesc(
+                        SecurityUtils.getCompanyId(),
+                        TransactionType.EXPENSE
+                )
                 .stream()
                 .map(this::toListResponse)
                 .toList();
@@ -82,7 +93,10 @@ public class TransactionService {
         UUID userId = SecurityUtils.getUserId();
         TransactionEntity transaction = getTransaction(companyId, transactionId);
 
-        validateLines(request.lines());
+        if (transaction.getJournalEntry() != null) {
+            throw new IllegalArgumentException("Posted transactions cannot be edited");
+        }
+        validateLines(request.lines(), request.transactionType());
         applyRequest(transaction, request, companyId);
         transaction.setUpdatedBy(userId);
 
@@ -94,9 +108,18 @@ public class TransactionService {
     @Transactional
     public void delete(Long transactionId) {
         TransactionEntity transaction = getTransaction(SecurityUtils.getCompanyId(), transactionId);
+        if (transaction.getJournalEntry() != null) {
+            throw new IllegalArgumentException("Posted transactions cannot be deleted");
+        }
         transaction.setActive(false);
         transaction.setUpdatedBy(SecurityUtils.getUserId());
         transactionRepository.save(transaction);
+    }
+
+    @Transactional
+    public TransactionResponse post(Long transactionId) {
+        accountingPostingService.postExpense(transactionId);
+        return toResponse(getTransaction(SecurityUtils.getCompanyId(), transactionId));
     }
 
     private TransactionEntity getTransaction(UUID companyId, Long transactionId) {
@@ -115,15 +138,20 @@ public class TransactionService {
         transaction.setVendor(resolveVendor(companyId, request.vendorId()));
         transaction.setDueDate(request.dueDate());
         transaction.setReferenceNo(blankToNull(request.referenceNo()));
+        transaction.setPaymentLedger(resolvePaymentLedger(companyId, request));
         transaction.setSubtotal(amountOrZero(request.subtotal()));
         transaction.setDiscountAmount(amountOrZero(request.discountAmount()));
         transaction.setTaxAmount(amountOrZero(request.taxAmount()));
         transaction.setRoundOff(amountOrZero(request.roundOff()));
         transaction.setTotalAmount(amountOrZero(request.totalAmount()));
         if (request.transactionType() == TransactionType.EXPENSE) {
-            transaction.setPaymentDate(
-                request.paymentDate() == null ? request.transactionDate() : request.paymentDate()
-            );
+            if (request.paymentDate() == null) {
+                throw new IllegalArgumentException("Payment date is required for an expense");
+            }
+            if (transaction.getPaymentLedger() == null) {
+                throw new IllegalArgumentException("Paid from account is required for an expense");
+            }
+            transaction.setPaymentDate(request.paymentDate());
             transaction.setPaymentStatus(PaymentStatus.PAID);
         } else {
             transaction.setPaymentDate(request.paymentDate());
@@ -133,6 +161,23 @@ public class TransactionService {
         }
         transaction.setNotes(blankToNull(request.notes()));
         transaction.setAttachments(blankToNull(request.attachments()));
+    }
+
+    private LedgerEntity resolvePaymentLedger(UUID companyId, TransactionRequest request) {
+        if (request.transactionType() != TransactionType.EXPENSE) {
+            return null;
+        }
+        if (request.paymentLedgerId() == null) {
+            throw new IllegalArgumentException("Paid from account is required for an expense");
+        }
+        LedgerEntity ledger = ledgerRepository.findByIdAndCompany_Id(request.paymentLedgerId(), companyId)
+                .orElseThrow(() -> new IllegalArgumentException("Paid from account not found"));
+        if (!Boolean.TRUE.equals(ledger.getActive())
+                || !Boolean.TRUE.equals(ledger.getPostingAllowed())
+                || (ledger.getLedgerType() != LedgerType.CASH && ledger.getLedgerType() != LedgerType.BANK)) {
+            throw new IllegalArgumentException("Paid from account must be an active, postable cash or bank ledger");
+        }
+        return ledger;
     }
 
     private VendorEntity resolveVendor(UUID companyId, Long vendorId) {
@@ -209,11 +254,15 @@ public class TransactionService {
         return account;
     }
 
-    private void validateLines(List<TransactionLineRequest> lines) {
+    private void validateLines(List<TransactionLineRequest> lines, TransactionType transactionType) {
         Set<Integer> lineNumbers = new HashSet<>();
         for (TransactionLineRequest line : lines) {
             if (!lineNumbers.add(line.lineNo())) {
                 throw new IllegalArgumentException("Line number must be unique");
+            }
+            if (transactionType == TransactionType.EXPENSE
+                    && line.lineType() != TransactionLineType.ACCOUNT) {
+                throw new IllegalArgumentException("Expense lines must use a Chart of Accounts ledger");
             }
         }
     }
@@ -243,7 +292,10 @@ public class TransactionService {
                 transaction.getRoundOff(),
                 transaction.getTotalAmount(),
                 transaction.getPaymentDate(),
+                transaction.getPaymentLedger() == null ? null : transaction.getPaymentLedger().getId(),
+                transaction.getPaymentLedger() == null ? null : transaction.getPaymentLedger().getName(),
                 transaction.getPaymentStatus(),
+                transaction.getJournalEntry() == null ? null : transaction.getJournalEntry().getId(),
                 transaction.getNotes(),
                 transaction.getAttachments(),
                 transaction.getCreatedBy(),
@@ -265,8 +317,11 @@ public class TransactionService {
                 vendor == null ? null : vendor.getDisplayName(),
                 transaction.getDueDate(),
                 transaction.getPaymentDate(),
+                transaction.getPaymentLedger() == null ? null : transaction.getPaymentLedger().getId(),
+                transaction.getPaymentLedger() == null ? null : transaction.getPaymentLedger().getName(),
                 transaction.getTotalAmount(),
-                transaction.getPaymentStatus()
+                transaction.getPaymentStatus(),
+                transaction.getJournalEntry() == null ? null : transaction.getJournalEntry().getId()
         );
     }
 

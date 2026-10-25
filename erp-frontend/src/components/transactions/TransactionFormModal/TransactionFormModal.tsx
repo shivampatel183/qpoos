@@ -11,26 +11,17 @@ import { useMessagePopup } from "@/components/ui/MessagePopup";
 import { Spinner } from "@/components/ui/Spinner";
 import { ApiError } from "@/lib/apiClient";
 import { accountingService, type Ledger } from "@/services/accountingService";
-import { productService, type Product } from "@/services/productService";
 import {
   transactionService,
-  type PaymentStatus,
   type Transaction,
-  type TransactionLineType,
   type TransactionPayload,
-  type TransactionType,
 } from "@/services/transactionService";
 import { vendorService, type Vendor } from "@/services/vendorService";
 import "./TransactionFormModal.css";
 
 type LineFormState = {
   id: string;
-  lineType: TransactionLineType;
-  itemId: string;
   accountId: string;
-  description: string;
-  quantity: string;
-  unit: string;
   rate: string;
   discount: string;
   taxRate: string;
@@ -38,13 +29,10 @@ type LineFormState = {
 
 type TransactionFormState = {
   transactionDate: string;
-  transactionType: TransactionType;
-  billNo: string;
   vendorId: string;
-  dueDate: string;
   referenceNo: string;
-  paymentStatus: PaymentStatus;
   paymentDate: string;
+  paymentLedgerId: string;
   roundOff: string;
   notes: string;
   attachments: string;
@@ -62,30 +50,8 @@ export type TransactionFormProps = {
   hideHeaderActions?: boolean;
 };
 
-const TRANSACTION_TYPE_OPTIONS = [
-  { value: "EXPENSE", label: "Expense" },
-  { value: "PURCHASE_BILL", label: "Purchase Bill" },
-  { value: "PURCHASE_ORDER", label: "Purchase Order" },
-  { value: "PURCHASE_RETURN", label: "Purchase Return" },
-  { value: "PAYMENT", label: "Payment" },
-];
-
-const PAYMENT_STATUS_OPTIONS = [
-  { value: "UNPAID", label: "Unpaid" },
-  { value: "PARTIALLY_PAID", label: "Partially Paid" },
-  { value: "PAID", label: "Paid" },
-  { value: "OVERDUE", label: "Overdue" },
-  { value: "CANCELLED", label: "Cancelled" },
-];
-
-const LINE_TYPE_OPTIONS = [
-  { value: "ACCOUNT", label: "Account" },
-  { value: "ITEM", label: "Item" },
-];
-
 const MONEY_PATTERN = /^-?\d+(?:\.\d{1,2})?$/;
 const POSITIVE_MONEY_PATTERN = /^\d+(?:\.\d{1,2})?$/;
-const QTY_PATTERN = /^\d+(?:\.\d{1,3})?$/;
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -100,12 +66,7 @@ function lineId(): string {
 function newLine(): LineFormState {
   return {
     id: lineId(),
-    lineType: "ACCOUNT",
-    itemId: "",
     accountId: "",
-    description: "",
-    quantity: "1",
-    unit: "",
     rate: "0.00",
     discount: "0.00",
     taxRate: "0",
@@ -113,22 +74,15 @@ function newLine(): LineFormState {
 }
 
 function createFormState(transaction?: Transaction): TransactionFormState {
-  const transactionType = transaction?.transactionType ?? "EXPENSE";
   const transactionDate = transaction?.transactionDate ?? today();
   return {
     transactionDate,
-    transactionType,
-    billNo: transaction?.billNo ?? "",
     vendorId: transaction?.vendorId ? String(transaction.vendorId) : "",
-    dueDate: transaction?.dueDate ?? "",
     referenceNo: transaction?.referenceNo ?? "",
-    paymentStatus:
-      transactionType === "EXPENSE"
-        ? "PAID"
-        : (transaction?.paymentStatus ?? "UNPAID"),
-    paymentDate:
-      transaction?.paymentDate ??
-      (transactionType === "EXPENSE" ? transactionDate : ""),
+    paymentDate: transaction?.paymentDate ?? transactionDate,
+    paymentLedgerId: transaction?.paymentLedgerId
+      ? String(transaction.paymentLedgerId)
+      : "",
     roundOff: String(transaction?.roundOff ?? 0),
     notes: transaction?.notes ?? "",
     attachments: transaction?.attachments ?? "",
@@ -139,12 +93,7 @@ function createLineState(transaction?: Transaction): LineFormState[] {
   if (!transaction?.lines?.length) return [newLine()];
   return transaction.lines.map((line) => ({
     id: String(line.id ?? lineId()),
-    lineType: line.lineType,
-    itemId: line.itemId ? String(line.itemId) : "",
     accountId: line.accountId ? String(line.accountId) : "",
-    description: line.description ?? "",
-    quantity: String(line.quantity),
-    unit: line.unit ?? "",
     rate: String(line.rate),
     discount: String(line.discount),
     taxRate: String(line.taxRate),
@@ -169,13 +118,12 @@ function roundMoney(value: number): number {
 }
 
 function getLineAmounts(line: LineFormState) {
-  const quantity = amount(line.quantity);
   const rate = amount(line.rate);
   const discount = amount(line.discount);
-  const base = Math.max(quantity * rate - discount, 0);
+  const base = Math.max(rate - discount, 0);
   const taxAmount = roundMoney((base * amount(line.taxRate)) / 100);
   return {
-    gross: roundMoney(quantity * rate),
+    gross: roundMoney(rate),
     discount: roundMoney(discount),
     taxAmount,
     amount: roundMoney(base + taxAmount),
@@ -201,19 +149,17 @@ function validateForm(
 ): TransactionFormErrors {
   const errors: TransactionFormErrors = {};
   if (!form.transactionDate) errors.transactionDate = "This field is required.";
-  if (!form.transactionType)
-    errors.transactionType = "Select a transaction type.";
+  if (!form.paymentDate) errors.paymentDate = "Payment date is required.";
+  if (!form.paymentLedgerId)
+    errors.paymentLedgerId = "Select the cash or bank account used.";
   if (form.roundOff.trim() && !MONEY_PATTERN.test(form.roundOff.trim())) {
     errors.roundOff = "Enter a valid amount.";
   }
   if (lines.length === 0) errors.lines = "Add at least one line.";
 
   const invalidLine = lines.find((line) => {
-    const targetMissing =
-      line.lineType === "ITEM" ? !line.itemId : !line.accountId;
     return (
-      targetMissing ||
-      !QTY_PATTERN.test(line.quantity.trim()) ||
+      !line.accountId ||
       !POSITIVE_MONEY_PATTERN.test(line.rate.trim()) ||
       !POSITIVE_MONEY_PATTERN.test(line.discount.trim()) ||
       (line.taxRate.trim() && !POSITIVE_MONEY_PATTERN.test(line.taxRate.trim()))
@@ -222,7 +168,7 @@ function validateForm(
 
   if (invalidLine) {
     errors.lines =
-      "Each line needs a valid item/account, quantity, rate, discount, and tax rate.";
+      "Each line needs an account, a valid rate and discount, and a valid tax rate.";
   }
 
   return errors;
@@ -238,36 +184,33 @@ function toPayload(
     totalAmount: number;
   },
 ): TransactionPayload {
-  const isExpense = form.transactionType === "EXPENSE";
   return {
     transactionDate: form.transactionDate,
-    transactionType: form.transactionType,
-    billNo: optionalValue(form.billNo),
+    transactionType: "EXPENSE",
+    billNo: null,
     vendorId: optionalNumber(form.vendorId),
-    dueDate: optionalValue(form.dueDate),
+    dueDate: null,
     referenceNo: optionalValue(form.referenceNo),
     subtotal: totals.subtotal,
     discountAmount: totals.discountAmount,
     taxAmount: totals.taxAmount,
     roundOff: amount(form.roundOff),
     totalAmount: totals.totalAmount,
-    paymentDate: optionalValue(
-      isExpense ? form.paymentDate || form.transactionDate : form.paymentDate,
-    ),
-    paymentStatus: isExpense ? "PAID" : form.paymentStatus,
+    paymentDate: optionalValue(form.paymentDate),
+    paymentLedgerId: optionalNumber(form.paymentLedgerId),
+    paymentStatus: "PAID",
     notes: optionalValue(form.notes),
     attachments: optionalValue(form.attachments),
     lines: lines.map((line, index) => {
       const lineAmounts = getLineAmounts(line);
       return {
         lineNo: index + 1,
-        lineType: line.lineType,
-        itemId: line.lineType === "ITEM" ? optionalNumber(line.itemId) : null,
-        accountId:
-          line.lineType === "ACCOUNT" ? optionalNumber(line.accountId) : null,
-        description: optionalValue(line.description),
-        quantity: amount(line.quantity),
-        unit: optionalValue(line.unit),
+        lineType: "ACCOUNT",
+        itemId: null,
+        accountId: optionalNumber(line.accountId),
+        description: null,
+        quantity: 1,
+        unit: null,
         rate: amount(line.rate),
         discount: amount(line.discount),
         taxRate: amount(line.taxRate),
@@ -295,30 +238,39 @@ export function TransactionForm({
   const [saving, setSaving] = useState(false);
   const [loadingLookups, setLoadingLookups] = useState(true);
   const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [ledgers, setLedgers] = useState<Ledger[]>([]);
 
   useEffect(() => {
     const controller = new AbortController();
     async function loadLookups() {
       setLoadingLookups(true);
-      try {
-        const [vendorList, productList, ledgerList] = await Promise.all([
-          vendorService.list(controller.signal),
-          productService.list(controller.signal),
-          accountingService.listLedgers(controller.signal),
-        ]);
-        setVendors(vendorList);
-        setProducts(productList);
-        setLedgers(ledgerList.filter((ledger) => ledger.active));
-      } catch (error) {
-        if (!controller.signal.aborted) {
-          messagePopup.error(
-            getErrorMessage(error, "Failed to load form options."),
-          );
-        }
-      } finally {
-        if (!controller.signal.aborted) setLoadingLookups(false);
+      const [vendorResult, ledgerResult] = await Promise.allSettled([
+        vendorService.list(controller.signal),
+        accountingService.listLedgers(controller.signal),
+      ]);
+      if (controller.signal.aborted) return;
+
+      if (vendorResult.status === "fulfilled") {
+        setVendors(vendorResult.value);
+      } else {
+        messagePopup.error(
+          getErrorMessage(vendorResult.reason, "Failed to load vendors."),
+        );
+      }
+
+      if (ledgerResult.status === "fulfilled") {
+        setLedgers(ledgerResult.value.filter((ledger) => ledger.active));
+      } else {
+        messagePopup.error(
+          getErrorMessage(
+            ledgerResult.reason,
+            "Failed to load Chart of Accounts.",
+          ),
+        );
+      }
+
+      if (!controller.signal.aborted) {
+        setLoadingLookups(false);
       }
     }
 
@@ -350,20 +302,28 @@ export function TransactionForm({
       })),
     [vendors],
   );
-  const productOptions = useMemo(
-    () =>
-      products.map((product) => ({
-        value: String(product.id),
-        label: product.name,
-      })),
-    [products],
-  );
   const ledgerOptions = useMemo(
     () =>
-      ledgers.map((ledger) => ({
-        value: String(ledger.id),
-        label: `${ledger.name} (${ledger.accountTypeName})`,
-      })),
+      ledgers
+        .filter((ledger) => ledger.postingAllowed !== false)
+        .map((ledger) => ({
+          value: String(ledger.id),
+          label: `${ledger.name} - ${ledger.accountTypeName}`,
+        })),
+    [ledgers],
+  );
+  const paymentLedgerOptions = useMemo(
+    () =>
+      ledgers
+        .filter(
+          (ledger) =>
+            ledger.postingAllowed !== false &&
+            (ledger.ledgerType === "CASH" || ledger.ledgerType === "BANK"),
+        )
+        .map((ledger) => ({
+          value: String(ledger.id),
+          label: `${ledger.name} - ${ledger.accountTypeName}`,
+        })),
     [ledgers],
   );
 
@@ -373,13 +333,6 @@ export function TransactionForm({
     const { name, value } = event.target;
     setForm((current) => {
       const next = { ...current, [name]: value };
-      if (
-        name === "transactionDate" &&
-        current.transactionType === "EXPENSE" &&
-        current.paymentDate === current.transactionDate
-      ) {
-        next.paymentDate = value;
-      }
       return next;
     });
     setErrors((current) => {
@@ -392,12 +345,7 @@ export function TransactionForm({
 
   function handleSelect(name: keyof TransactionFormState, value: string) {
     setForm((current) => {
-      const next = { ...current, [name]: value };
-      if (name === "transactionType" && value === "EXPENSE") {
-        next.paymentStatus = "PAID";
-        next.paymentDate = current.paymentDate || current.transactionDate;
-      }
-      return next;
+      return { ...current, [name]: value };
     });
     setErrors((current) => {
       const next = { ...current };
@@ -410,10 +358,7 @@ export function TransactionForm({
     setLines((current) =>
       current.map((line) => {
         if (line.id !== id) return line;
-        const next = { ...line, ...changes };
-        if (changes.lineType === "ITEM") next.accountId = "";
-        if (changes.lineType === "ACCOUNT") next.itemId = "";
-        return next;
+        return { ...line, ...changes };
       }),
     );
     setErrors((current) => {
@@ -421,16 +366,6 @@ export function TransactionForm({
       const next = { ...current };
       delete next.lines;
       return next;
-    });
-  }
-
-  function handleItemChange(lineId: string, itemId: string) {
-    const product = products.find(
-      (candidate) => String(candidate.id) === itemId,
-    );
-    updateLine(lineId, {
-      itemId,
-      ...(product?.salePrice != null && { rate: String(product.salePrice) }),
     });
   }
 
@@ -457,8 +392,8 @@ export function TransactionForm({
         : await transactionService.create(payload);
       messagePopup.success(
         transaction
-          ? "Transaction updated successfully."
-          : "Transaction created successfully.",
+          ? "Expense updated successfully."
+          : "Expense saved and posted successfully.",
       );
       onSaved?.(saved);
     } catch (error) {
@@ -472,11 +407,7 @@ export function TransactionForm({
     <div className="transaction-form-page__panel">
       <div className="transaction-form-page__header">
         <div>
-          <h2>
-            {transaction
-              ? "Edit Expense Transaction"
-              : "New Expense Transaction"}
-          </h2>
+          <h2>{transaction ? "Edit Expense" : "New Expense"}</h2>
         </div>
         {!hideHeaderActions && (
           <div className="transaction-form-page__actions">
@@ -500,7 +431,7 @@ export function TransactionForm({
                   Saving...
                 </>
               ) : (
-                "Save"
+                "Save & Post"
               )}
             </button>
           </div>
@@ -520,7 +451,7 @@ export function TransactionForm({
         )}
 
         <section className="transaction-form__section">
-          <h3>Transaction Details</h3>
+          <h3>Expense Details</h3>
           <div className="transaction-form__grid">
             <label
               className={`transaction-form__field transaction-form__field--required${errors.transactionDate ? " transaction-form__field--invalid" : ""}`}
@@ -541,44 +472,14 @@ export function TransactionForm({
               )}
             </label>
 
-            <label className="transaction-form__field transaction-form__field--required">
-              <span>Type</span>
-              <CustomSelect
-                name="transactionType"
-                value={form.transactionType}
-                onChange={(value) => handleSelect("transactionType", value)}
-                options={TRANSACTION_TYPE_OPTIONS}
-              />
-            </label>
-
             <label className="transaction-form__field">
-              <span>Vendor</span>
+              <span>Vendor / Payee</span>
               <CustomSelect
                 name="vendorId"
                 value={form.vendorId}
                 onChange={(value) => handleSelect("vendorId", value)}
                 options={[{ value: "", label: "No vendor" }, ...vendorOptions]}
                 disabled={loadingLookups}
-              />
-            </label>
-
-            <label className="transaction-form__field">
-              <span>Bill No</span>
-              <input
-                name="billNo"
-                value={form.billNo}
-                onChange={handleChange}
-                maxLength={50}
-              />
-            </label>
-
-            <label className="transaction-form__field">
-              <span>Due Date</span>
-              <input
-                type="date"
-                name="dueDate"
-                value={form.dueDate}
-                onChange={handleChange}
               />
             </label>
 
@@ -592,25 +493,51 @@ export function TransactionForm({
               />
             </label>
 
-            <label className="transaction-form__field">
-              <span>Payment Status</span>
-              <CustomSelect
-                name="paymentStatus"
-                value={form.paymentStatus}
-                onChange={(value) => handleSelect("paymentStatus", value)}
-                options={PAYMENT_STATUS_OPTIONS}
-                disabled={form.transactionType === "EXPENSE"}
-              />
-            </label>
-
-            <label className="transaction-form__field">
+            <label
+              className={`transaction-form__field transaction-form__field--required${errors.paymentDate ? " transaction-form__field--invalid" : ""}`}
+            >
               <span>Payment Date</span>
               <input
                 type="date"
                 name="paymentDate"
                 value={form.paymentDate}
                 onChange={handleChange}
+                required
               />
+              {errors.paymentDate && (
+                <small className="transaction-form__error">
+                  {errors.paymentDate}
+                </small>
+              )}
+            </label>
+
+            <label
+              className={`transaction-form__field transaction-form__field--required${errors.paymentLedgerId ? " transaction-form__field--invalid" : ""}`}
+            >
+              <span>Paid From (Chart of Accounts)</span>
+              <CustomSelect
+                name="paymentLedgerId"
+                value={form.paymentLedgerId}
+                onChange={(value) => handleSelect("paymentLedgerId", value)}
+                options={[
+                  { value: "", label: "Select cash or bank account" },
+                  ...(paymentLedgerOptions.length > 0
+                    ? paymentLedgerOptions
+                    : [
+                        {
+                          value: "",
+                          label: "No cash or bank accounts found",
+                          disabled: true,
+                        },
+                      ]),
+                ]}
+                disabled={loadingLookups}
+              />
+              {errors.paymentLedgerId && (
+                <small className="transaction-form__error">
+                  {errors.paymentLedgerId}
+                </small>
+              )}
             </label>
 
             <label
@@ -648,17 +575,12 @@ export function TransactionForm({
             <small className="transaction-form__error">{errors.lines}</small>
           )}
 
-          <div className="transaction-form__lines">
+          <div className="transaction-form__lines transaction-form__lines-scroll transaction-form__lines-scroll--expense">
             {lines.length > 0 && (
               <div className="transaction-form__line-header">
                 <div className="transaction-form__line-header-grid">
-                  <span>Line Type</span>
-                  <span>
-                    {lines[0]?.lineType === "ITEM" ? "Item" : "Account"}
-                  </span>
-                  <span>Description</span>
-                  <span>Qty</span>
-                  <span>Unit</span>
+                  {/* <span>Line Type</span> */}
+                  <span>Account</span>
                   <span>Rate</span>
                   <span>Discount</span>
                   <span>Tax %</span>
@@ -672,75 +594,27 @@ export function TransactionForm({
               return (
                 <div className="transaction-form__line" key={line.id}>
                   <div className="transaction-form__line-grid">
-                    <div className="transaction-form__field transaction-form__line-type transaction-form__field--no-label">
-                      <CustomSelect
-                        value={line.lineType}
-                        onChange={(value) =>
-                          updateLine(line.id, {
-                            lineType: value as TransactionLineType,
-                          })
-                        }
-                        options={LINE_TYPE_OPTIONS}
-                      />
-                    </div>
-
                     <div className="transaction-form__field transaction-form__line-target transaction-form__field--no-label">
                       <CustomSelect
-                        value={
-                          line.lineType === "ITEM"
-                            ? line.itemId
-                            : line.accountId
-                        }
+                        value={line.accountId}
                         onChange={(value) =>
-                          line.lineType === "ITEM"
-                            ? handleItemChange(line.id, value)
-                            : updateLine(line.id, { accountId: value })
+                          updateLine(line.id, { accountId: value })
                         }
                         options={
-                          line.lineType === "ITEM"
-                            ? productOptions
-                            : ledgerOptions
+                          ledgerOptions.length > 0
+                            ? ledgerOptions
+                            : [
+                                {
+                                  value: "",
+                                  label: "No postable Chart of Accounts found",
+                                  disabled: true,
+                                },
+                              ]
                         }
-                        placeholder={
-                          line.lineType === "ITEM"
-                            ? "Select item"
-                            : "Select account"
-                        }
+                        placeholder="Select account from Chart of Accounts"
                         disabled={loadingLookups}
                       />
                     </div>
-
-                    <label className="transaction-form__field transaction-form__line-description transaction-form__field--no-label">
-                      <input
-                        value={line.description}
-                        onChange={(event) =>
-                          updateLine(line.id, {
-                            description: event.target.value,
-                          })
-                        }
-                        maxLength={2000}
-                      />
-                    </label>
-
-                    <label className="transaction-form__field transaction-form__line-qty transaction-form__field--no-label">
-                      <input
-                        value={line.quantity}
-                        onChange={(event) =>
-                          updateLine(line.id, { quantity: event.target.value })
-                        }
-                        inputMode="decimal"
-                      />
-                    </label>
-
-                    <label className="transaction-form__field transaction-form__line-unit transaction-form__field--no-label">
-                      <input
-                        value={line.unit}
-                        onChange={(event) =>
-                          updateLine(line.id, { unit: event.target.value })
-                        }
-                        maxLength={50}
-                      />
-                    </label>
 
                     <label className="transaction-form__field transaction-form__line-rate transaction-form__field--no-label">
                       <input

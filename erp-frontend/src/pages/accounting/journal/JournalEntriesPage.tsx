@@ -8,6 +8,7 @@ import {
   accountingService,
   type JournalEntry,
 } from "@/services/accountingService";
+import "./JournalEntriesPage.css";
 
 function errorMessage(error: unknown): string {
   return error instanceof ApiError
@@ -55,11 +56,11 @@ export function JournalEntriesPage() {
       {
         key: "journalNumber",
         header: "Journal",
+        width: "150px",
         render: (entry) => (
-          <div>
+          <div className="journal-entry__identity">
             <strong>{entry.journalNumber}</strong>
-            <br />
-            <small>{entry.sourceType.replaceAll("_", " ")}</small>
+            <span>{entry.sourceType.replaceAll("_", " ")}</span>
           </div>
         ),
       },
@@ -70,33 +71,18 @@ export function JournalEntriesPage() {
       {
         key: "sourceDocumentId",
         header: "Source",
-        render: (entry) => `${entry.sourceType} #${entry.sourceDocumentId}`,
+        render: (entry) => `#${entry.sourceDocumentId}`,
       },
       {
         key: "narration",
         header: "Description",
       },
       {
-        key: "lines",
-        header: "Lines",
-        render: (entry) => (
-          <details>
-            <summary>{entry.lines.length} lines</summary>
-            <ul>
-              {entry.lines.map((line) => (
-                <li key={line.id}>
-                  {line.ledgerCode} - {line.ledgerName}:{" "}
-                  {formatMoney(line.debitAmount)} Dr /{" "}
-                  {formatMoney(line.creditAmount)} Cr
-                </li>
-              ))}
-            </ul>
-          </details>
-        ),
-      },
-      {
         key: "status",
         header: "Status",
+        render: (entry) => (
+          <span className="journal-entry__status">{entry.status.toLowerCase()}</span>
+        ),
       },
       {
         key: "total",
@@ -126,6 +112,43 @@ export function JournalEntriesPage() {
       defaultSort={{ key: "accountingDate", direction: "desc" }}
       pageSize={25}
       density="compact"
+      expandableRow={{
+        label: (entry, expanded) => `${expanded ? "Collapse" : "Show"} ${entry.lines.length} journal lines`,
+        render: (entry) => (
+          <div className="journal-lines">
+            <div className="journal-lines__heading">
+              <strong>Journal lines</strong>
+              <span>{entry.journalNumber}</span>
+            </div>
+            <div className="journal-lines__grid">
+              <div className="journal-lines__grid-header">
+                <span>Account</span>
+                <span>Debit</span>
+                <span>Credit</span>
+              </div>
+              {entry.lines.map((line) => (
+                <div className="journal-lines__grid-row" key={line.id}>
+                  <span className="journal-lines__account">
+                    <strong>{line.ledgerName}</strong>
+                    <small>{line.description ? ` - ${line.description}` : ""}</small>
+                  </span>
+                  <span className="journal-lines__amount">
+                    {line.debitAmount > 0 ? formatMoney(line.debitAmount) : "-"}
+                  </span>
+                  <span className="journal-lines__amount">
+                    {line.creditAmount > 0 ? formatMoney(line.creditAmount) : "-"}
+                  </span>
+                </div>
+              ))}
+              <div className="journal-lines__grid-total">
+                <strong>Total</strong>
+                <strong>{formatMoney(entry.lines.reduce((total, line) => total + line.debitAmount, 0))}</strong>
+                <strong>{formatMoney(entry.lines.reduce((total, line) => total + line.creditAmount, 0))}</strong>
+              </div>
+            </div>
+          </div>
+        ),
+      }}
       emptyTitle="No journal entries yet"
       emptyMessage="Post a purchase bill or expense to create its accounting journal."
     />

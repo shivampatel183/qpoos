@@ -213,10 +213,13 @@ public class AccountingBootstrapService implements ApplicationRunner {
         AccountGroupEntity companyGroup = ensureCompanyGroup(company, definition);
         LedgerEntity ledger = ledgerRepository.findByCompany_IdAndCodeIgnoreCase(company.getId(), code)
                 .orElseGet(LedgerEntity::new);
+        boolean newLedger = ledger.getId() == null;
         ledger.setCompany(company);
         ledger.setAccountGroup(companyGroup);
         ledger.setCode(code);
-        ledger.setName(name);
+        if (newLedger) {
+            ledger.setName(name);
+        }
         ledger.setLedgerType(definition.getDefaultLedgerType());
         ledger.setNormalBalance(definition.getAccountGroup().getNormalBalance());
         ledger.setPostingAllowed(true);

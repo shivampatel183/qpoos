@@ -191,6 +191,7 @@ export function ChartOfAccountsPage() {
             label: "Deactivate account",
             icon: Trash2,
             danger: true,
+            disabled: (ledger) => ledger.systemDefined,
             onClick: handleDelete,
           },
         ]}

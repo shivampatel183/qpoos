@@ -296,6 +296,73 @@
   box-shadow: 2px 0 4px -3px rgba(15, 23, 42, 0.35);
 }
 
+.data-table__expand-col {
+  width: 38px;
+  min-width: 38px;
+  padding-right: 4px !important;
+  padding-left: 8px !important;
+  text-align: center;
+}
+
+.data-table__expand-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.data-table__expand-btn:hover,
+.data-table__expand-btn[aria-expanded="true"] {
+  border-color: var(--border-light);
+  background: var(--bg-panel);
+  color: var(--brand-primary);
+}
+
+.data-table__expand-btn svg {
+  transition: transform 180ms ease;
+}
+
+.data-table__expand-btn[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.data-table__row--expanded > td {
+  border-bottom-color: transparent;
+  background: var(--bg-hover-light);
+}
+
+.data-table__expanded-row > td {
+  padding: 0 !important;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-hover-light);
+}
+
+.data-table__expanded-content {
+  padding: 14px 20px 18px 52px;
+  border-top: 1px solid var(--border-light);
+  animation: data-table-expand-in 180ms ease-out;
+}
+
+@keyframes data-table-expand-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .data-table__cell--sticky-right {
   right: 0;
   box-shadow: -2px 0 4px -3px rgba(15, 23, 42, 0.35);

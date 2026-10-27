@@ -211,26 +211,30 @@ export function AccountFormModal({
 
                 <div className="account-form-modal__field account-form-modal__field--required">
                     <span id="account-type-label">Account Type</span>
-                    <CustomSelect
-                        name="accountTypeId"
-                        value={form.accountTypeId}
-                        onChange={(accountTypeId) => {
-                            setForm((current) => ({ ...current, accountTypeId }));
-                        }}
-                        groups={groupedAccountTypes.map(([label, types]) => ({
-                            label,
-                            options: types.map((accountType) => ({
-                                value: String(accountType.id),
-                                label: accountType.name,
-                            })),
-                        }))}
-                        placeholder={loadingAccountTypes
-                            ? 'Loading account types...'
-                            : 'Select account type'}
-                        ariaLabelledBy="account-type-label"
-                        disabled={loadingAccountTypes}
-                        maxMenuHeight={260}
-                    />
+                    {account?.systemDefined ? (
+                        <input value={account.accountTypeName} readOnly />
+                    ) : (
+                        <CustomSelect
+                            name="accountTypeId"
+                            value={form.accountTypeId}
+                            onChange={(accountTypeId) => {
+                                setForm((current) => ({ ...current, accountTypeId }));
+                            }}
+                            groups={groupedAccountTypes.map(([label, types]) => ({
+                                label,
+                                options: types.map((accountType) => ({
+                                    value: String(accountType.id),
+                                    label: accountType.name,
+                                })),
+                            }))}
+                            placeholder={loadingAccountTypes
+                                ? 'Loading account types...'
+                                : 'Select account type'}
+                            ariaLabelledBy="account-type-label"
+                            disabled={loadingAccountTypes}
+                            maxMenuHeight={260}
+                        />
+                    )}
                 </div>
 
                 <div className="account-form-modal__row">

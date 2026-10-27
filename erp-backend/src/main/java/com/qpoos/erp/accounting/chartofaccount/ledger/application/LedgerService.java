@@ -1,28 +1,30 @@
 package com.qpoos.erp.accounting.chartofaccount.ledger.application;
 
-import com.qpoos.erp.accounting.chartofaccount.ledger.domain.LedgerEntity;
-import com.qpoos.erp.accounting.chartofaccount.ledger.infrastructure.LedgerRepository;
-import com.qpoos.erp.accounting.journal.infrastructure.JournalLineRepository;
-import com.qpoos.erp.accounting.journal.infrastructure.LedgerMovement;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
 import com.qpoos.erp.accounting.chartofaccount.accountcatalog.domain.AccountTypeDefinitionEntity;
 import com.qpoos.erp.accounting.chartofaccount.accountcatalog.infrastructure.AccountTypeDefinitionRepository;
 import com.qpoos.erp.accounting.chartofaccount.accountgroup.domain.AccountGroupEntity;
 import com.qpoos.erp.accounting.chartofaccount.accountgroup.infrastructure.AccountGroupRepository;
 import com.qpoos.erp.accounting.chartofaccount.accounttype.domain.AccountTypeEntity;
 import com.qpoos.erp.accounting.chartofaccount.domain.NormalBalance;
+import com.qpoos.erp.accounting.chartofaccount.ledger.domain.LedgerEntity;
 import com.qpoos.erp.accounting.chartofaccount.ledger.dto.LedgerRequest;
 import com.qpoos.erp.accounting.chartofaccount.ledger.dto.LedgerResponse;
+import com.qpoos.erp.accounting.chartofaccount.ledger.infrastructure.LedgerRepository;
+import com.qpoos.erp.accounting.journal.infrastructure.JournalLineRepository;
+import com.qpoos.erp.accounting.journal.infrastructure.LedgerMovement;
 import com.qpoos.erp.common.security.SecurityUtils;
 import com.qpoos.erp.company.domain.CompanyEntity;
+
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Locale;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -79,17 +81,18 @@ public class LedgerService {
     public LedgerResponse update(Long ledgerId, LedgerRequest request) {
         UUID companyId = SecurityUtils.getCompanyId();
         LedgerEntity ledger = getLedger(companyId, ledgerId);
-        validateUserManaged(ledger);
-        AccountTypeDefinitionEntity definition = getActiveDefinition(request.accountTypeId());
-        CompanyEntity company = entityManager.getReference(CompanyEntity.class, companyId);
-
-        ledger.setAccountGroup(getOrCreateCompanyGroup(company, definition));
+        boolean systemDefined = Boolean.TRUE.equals(ledger.getSystemDefined());
+        if (!systemDefined) {
+            AccountTypeDefinitionEntity definition = getActiveDefinition(request.accountTypeId());
+            CompanyEntity company = entityManager.getReference(CompanyEntity.class, companyId);
+            ledger.setAccountGroup(getOrCreateCompanyGroup(company, definition));
+            ledger.setLedgerType(definition.getDefaultLedgerType());
+            ledger.setNormalBalance(definition.getAccountGroup().getNormalBalance());
+        }
         ledger.setName(normalizeName(request.name()));
         ledger.setDescription(blankToNull(request.description()));
         ledger.setOpeningBalance(request.openingBalance());
         ledger.setOpeningBalanceAsOfDate(request.openingBalanceAsOfDate());
-        ledger.setLedgerType(definition.getDefaultLedgerType());
-        ledger.setNormalBalance(definition.getAccountGroup().getNormalBalance());
 
         return toResponse(ledgerRepository.save(ledger));
     }
@@ -144,7 +147,7 @@ public class LedgerService {
 
     private void validateUserManaged(LedgerEntity ledger) {
         if (Boolean.TRUE.equals(ledger.getSystemDefined())) {
-            throw new IllegalArgumentException("System-defined accounts cannot be changed");
+            throw new IllegalArgumentException("System-defined accounts cannot be deactivated");
         }
     }
 

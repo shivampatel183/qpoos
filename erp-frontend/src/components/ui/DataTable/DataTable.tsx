@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   ArrowDown,
@@ -403,6 +403,7 @@ export function DataTable<T>({
   moreActions = [],
   stickyActions = true,
   bulkActions = [],
+  expandableRow,
   primaryAction,
   toolbarActions,
   emptyTitle = "No records found",
@@ -432,6 +433,7 @@ export function DataTable<T>({
   const [internalSelectedRows, setInternalSelectedRows] = useState<string[]>(
     [],
   );
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
   const [internalFilters, setInternalFilters] =
     useState<DataTableFilterState>(defaultFilters);
 
@@ -540,6 +542,7 @@ export function DataTable<T>({
     visibleRowIds.every((id) => activeSelectedRows.includes(id));
 
   const hasActions = actions.length > 0 || moreActions.length > 0;
+  const hasExpandableRows = Boolean(expandableRow);
   const hasHeader =
     title ||
     subtitle ||
@@ -791,6 +794,8 @@ export function DataTable<T>({
                   </th>
                 )}
 
+                {hasExpandableRows && <th className="data-table__expand-col" />}
+
                 {columns.map((column) => (
                   <th
                     key={String(column.key)}
@@ -842,7 +847,7 @@ export function DataTable<T>({
                   <td
                     className="data-table__state-cell"
                     colSpan={
-                      columns.length + Number(selectable) + Number(hasActions)
+                      columns.length + Number(selectable) + Number(hasExpandableRows) + Number(hasActions)
                     }
                   >
                     <Spinner size={22} />
@@ -856,7 +861,7 @@ export function DataTable<T>({
                   <td
                     className="data-table__empty-cell"
                     colSpan={
-                      columns.length + Number(selectable) + Number(hasActions)
+                      columns.length + Number(selectable) + Number(hasExpandableRows) + Number(hasActions)
                     }
                   >
                     <strong>{emptyTitle}</strong>
@@ -885,15 +890,17 @@ export function DataTable<T>({
                   const rowMoreActions = moreActions.filter(
                     (action) => !(action.hidden?.(row) ?? false),
                   );
+                  const isExpanded = expandedRowId === id;
 
                   return (
-                    <tr
-                      key={id}
-                      className={
-                        onRowClick ? "data-table__row--clickable" : undefined
-                      }
-                      onClick={() => onRowClick?.(row)}
-                    >
+                    <Fragment key={id}>
+                      <tr
+                        className={[
+                          onRowClick ? "data-table__row--clickable" : "",
+                          isExpanded ? "data-table__row--expanded" : "",
+                        ].filter(Boolean).join(" ")}
+                        onClick={() => onRowClick?.(row)}
+                      >
                       {selectable && (
                         <td className="data-table__select-col">
                           <input
@@ -903,6 +910,24 @@ export function DataTable<T>({
                             onClick={(event) => event.stopPropagation()}
                             aria-label="Select row"
                           />
+                        </td>
+                      )}
+
+                      {expandableRow && (
+                        <td className="data-table__expand-col">
+                          <button
+                            type="button"
+                            className="data-table__expand-btn"
+                            aria-expanded={isExpanded}
+                            aria-label={expandableRow.label?.(row, isExpanded) ?? (isExpanded ? "Collapse row" : "Expand row")}
+                            title={expandableRow.label?.(row, isExpanded) ?? (isExpanded ? "Collapse row" : "Expand row")}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setExpandedRowId(isExpanded ? null : id);
+                            }}
+                          >
+                            <ChevronDown size={15} aria-hidden="true" />
+                          </button>
                         </td>
                       )}
 
@@ -955,7 +980,17 @@ export function DataTable<T>({
                           </div>
                         </td>
                       )}
-                    </tr>
+                      </tr>
+                      {expandableRow && isExpanded && (
+                        <tr className="data-table__expanded-row">
+                          <td colSpan={columns.length + Number(selectable) + Number(hasExpandableRows) + Number(hasActions)}>
+                            <div className="data-table__expanded-content">
+                              {expandableRow.render(row)}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   );
                 })}
             </tbody>

@@ -112,6 +112,11 @@ export type DataTableProps<T> = {
   moreActions?: DataTableAction<T>[];
   stickyActions?: boolean;
   bulkActions?: DataTableBulkAction<T>[];
+  /** Render arbitrary content in a full-width row directly below the expanded record. */
+  expandableRow?: {
+    render: (row: T) => ReactNode;
+    label?: (row: T, expanded: boolean) => string;
+  };
 
   primaryAction?: DataTablePrimaryAction;
   toolbarActions?: ReactNode;

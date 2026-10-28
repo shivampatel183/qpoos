@@ -9,6 +9,7 @@ import {
 import { Spinner } from "@/components/ui/Spinner";
 import { useMessagePopup } from "@/components/ui/MessagePopup";
 import { ApiError } from "@/lib/apiClient";
+import { paymentService, type PayableBill, type SettlementHistory } from "@/services/paymentService";
 import { productService, type Product } from "@/services/productService";
 import { vendorService, type Vendor } from "@/services/vendorService";
 import {
@@ -60,6 +61,8 @@ export function PurchaseBillFormPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [terms, setTerms] = useState<PaymentTerm[]>([]);
   const [bill, setBill] = useState<PurchaseBill | null>(null);
+  const [settlement, setSettlement] = useState<PayableBill | null>(null);
+  const [settlementHistory, setSettlementHistory] = useState<SettlementHistory[]>([]);
   const [vendorId, setVendorId] = useState("");
   const [paymentTermId, setPaymentTermId] = useState("");
   const [billDate, setBillDate] = useState(
@@ -144,6 +147,24 @@ export function PurchaseBillFormPage() {
       });
     return () => controller.abort();
   }, [billId, popup]);
+
+  useEffect(() => {
+    if (!bill || bill.status !== "POSTED") { setSettlement(null); return; }
+    const controller = new AbortController();
+    Promise.all([
+      paymentService.payableBills(bill.vendorId, controller.signal),
+      paymentService.settlementHistory("PURCHASE_BILL", bill.id, controller.signal),
+    ]).then(([rows, history]) => {
+      setSettlementHistory(history);
+      setSettlement(rows.find((row) => row.id === bill.id) ?? {
+        id: bill.id, billNumber: bill.billNumber, billDate: bill.billDate, dueDate: bill.dueDate,
+        vendorId: bill.vendorId, vendorName: bill.vendorName, totalAmount: bill.totalAmount,
+        settledAmount: bill.totalAmount, outstandingAmount: 0,
+      });
+    })
+      .catch(() => { if (!controller.signal.aborted) setSettlement(null); });
+    return () => controller.abort();
+  }, [bill]);
 
   function updateLine(id: string, changes: Partial<DocumentItemLine>) {
     setLines((current) =>
@@ -247,6 +268,12 @@ export function PurchaseBillFormPage() {
                 Post
               </button>
             )}
+            {bill?.status === "POSTED" && settlement && settlement.outstandingAmount > 0 && (
+              <button type="button" className="btn-success"
+                onClick={() => navigate(`/payments/new?vendorId=${bill.vendorId}&billId=${bill.id}`)}>
+                Make Payment
+              </button>
+            )}
             {bill?.status === "DRAFT" && (
               <button
                 type="button"
@@ -259,6 +286,21 @@ export function PurchaseBillFormPage() {
             )}
           </div>
         </header>
+
+        {bill?.status === "POSTED" && settlement && (
+          <section className="purchase-order-form__section">
+            <h2>Settlement</h2>
+            <div className="purchase-order-form__line">
+              <span>Bill total: {money(settlement.totalAmount)}</span>
+              <span>Paid: {money(settlement.settledAmount)}</span>
+              <strong>Outstanding: {money(settlement.outstandingAmount)}</strong>
+            </div>
+            {settlement.outstandingAmount <= 0 && <p>This bill is fully paid.</p>}
+            {settlementHistory.length > 0 && <div className="purchase-order-form__line"><strong>Payment history</strong>
+              {settlementHistory.map((item) => <span key={item.paymentId}><button type="button" className="btn-link" onClick={() => navigate(`/payments/${item.paymentId}`)}>{item.paymentNumber}</button> · {item.paymentDate} · {money(item.allocatedAmount)} · {item.status}</span>)}
+            </div>}
+          </section>
+        )}
 
         <section className="purchase-order-form__section purchase-order-form__section--details">
           <h2>Bill Details</h2>

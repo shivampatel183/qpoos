@@ -1,5 +1,7 @@
 # Payment Design
 
+> The centralized implementation and current rollout scope are tracked in [payment-module-implementation-plan.md](payment-module-implementation-plan.md). This document records the earlier proposal; its transaction-only allocation schema is superseded by the implemented `document_type` + `document_id` allocation reference.
+
 ## Purpose
 
 Payments settle supplier bills and expenses. A payment is a financial document and must be recorded separately from the purchase transaction that created the payable balance.

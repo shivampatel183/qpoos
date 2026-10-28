@@ -108,6 +108,18 @@ export const API = {
     post: (id: string | number) => `/purchase-bills/${id}/post`,
     cancel: (id: string | number) => `/purchase-bills/${id}/cancel`,
   },
+  payments: {
+    list: "/payments",
+    create: "/payments",
+    detail: (id: string | number) => `/payments/${id}`,
+    update: (id: string | number) => `/payments/${id}`,
+    post: (id: string | number) => `/payments/${id}/post`,
+    void: (id: string | number) => `/payments/${id}/void`,
+    reverse: (id: string | number) => `/payments/${id}/reverse`,
+    payableBills: "/payments/payable-bills",
+    payableDocuments: "/payments/payable-documents",
+    settlementHistory: "/payments/settlement-history",
+  },
   paymentTerms: {
     list: "/payment-terms",
   },

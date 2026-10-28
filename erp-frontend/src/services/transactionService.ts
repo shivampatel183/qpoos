@@ -96,6 +96,7 @@ export interface TransactionPayload {
   paymentDate: string | null;
   paymentLedgerId: number | null;
   paymentStatus: PaymentStatus;
+  payLater: boolean;
   notes: string | null;
   attachments: string | null;
   lines: TransactionLinePayload[];

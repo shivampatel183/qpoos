@@ -33,6 +33,9 @@ import com.qpoos.erp.purchase.expense.domain.TransactionType;
 import com.qpoos.erp.purchase.expense.infrastructure.TransactionLineRepository;
 import com.qpoos.erp.purchase.expense.infrastructure.TransactionRepository;
 import com.qpoos.erp.purchase.shared.domain.PurchaseBillStatus;
+import com.qpoos.erp.payment.domain.PaymentEntity;
+import com.qpoos.erp.payment.infrastructure.PaymentRepository;
+import com.qpoos.erp.payment.infrastructure.PaymentAllocationRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -50,6 +53,146 @@ public class AccountingPostingService {
     private final JournalEntryRepository journalEntryRepository;
     private final JournalValidator journalValidator;
     private final DocumentNumberService documentNumberService;
+    private final PaymentRepository paymentRepository;
+    private final PaymentAllocationRepository paymentAllocationRepository;
+
+    @Transactional
+    public JournalEntryEntity postPayment(Long id) {
+        UUID companyId = SecurityUtils.getCompanyId();
+        PaymentEntity payment = paymentRepository.findForPosting(id, companyId)
+                .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
+        if (payment.getStatus() == com.qpoos.erp.payment.domain.PaymentStatus.POSTED && payment.getVoucherId() != null) {
+            return journalEntryRepository.findById(payment.getVoucherId())
+                    .orElseThrow(() -> new IllegalStateException("Posted payment journal is missing"));
+        }
+        if (payment.getStatus() != com.qpoos.erp.payment.domain.PaymentStatus.DRAFT) {
+            throw new IllegalArgumentException("Only draft payments can be posted");
+        }
+        if (payment.getPaymentDate() == null || payment.getAmount() == null || payment.getAmount().signum() <= 0
+                || payment.getSourceLedger() == null || payment.getVendor() == null) {
+            throw new IllegalArgumentException("Payment date, amount, vendor, and source ledger are required");
+        }
+        LedgerEntity source = payment.getSourceLedger();
+        if (!companyId.equals(source.getCompany().getId()) || !Boolean.TRUE.equals(source.getActive())
+                || !Boolean.TRUE.equals(source.getPostingAllowed())
+                || (source.getLedgerType() != com.qpoos.erp.accounting.chartofaccount.domain.LedgerType.CASH
+                    && source.getLedgerType() != com.qpoos.erp.accounting.chartofaccount.domain.LedgerType.BANK)) {
+            throw new IllegalArgumentException("Payment source must be an active company cash or bank ledger");
+        }
+        List<com.qpoos.erp.payment.domain.PaymentAllocationEntity> allocations =
+                paymentAllocationRepository.findAllByPayment_IdAndCompany_Id(payment.getId(), companyId);
+        if (allocations.isEmpty()) throw new IllegalArgumentException("At least one bill allocation is required");
+        BigDecimal total = allocations.stream().map(com.qpoos.erp.payment.domain.PaymentAllocationEntity::getAllocatedAmount)
+                .reduce(ZERO, BigDecimal::add);
+        requireSameMoney("Payment allocation total", total, payment.getAmount());
+
+        List<JournalLineEntity> lines = new ArrayList<>();
+        int lineNo = 1;
+        BigDecimal payableTotal = ZERO;
+        List<TransactionEntity> payableExpenses = new ArrayList<>();
+        for (var allocation : allocations.stream()
+                .sorted(java.util.Comparator.comparing(com.qpoos.erp.payment.domain.PaymentAllocationEntity::getDocumentType)
+                        .thenComparing(com.qpoos.erp.payment.domain.PaymentAllocationEntity::getDocumentId))
+                .toList()) {
+            if (allocation.getAllocatedAmount() == null || allocation.getAllocatedAmount().signum() <= 0) {
+                throw new IllegalArgumentException("Payment allocations must be positive");
+            }
+            if ("PURCHASE_BILL".equals(allocation.getDocumentType())) {
+                PurchaseBillEntity bill = purchaseBillRepository.findForPosting(allocation.getDocumentId(), companyId)
+                        .orElseThrow(() -> new IllegalArgumentException("Allocated purchase bill not found"));
+                if (bill.getStatus() != PurchaseBillStatus.POSTED || bill.getJournalEntry() == null
+                        || !bill.getVendor().getId().equals(payment.getVendor().getId())) {
+                    throw new IllegalArgumentException("Payment allocations must target posted bills for the selected vendor");
+                }
+                BigDecimal alreadyPaid = paymentAllocationRepository.sumPostedForDocument(companyId, "PURCHASE_BILL", bill.getId());
+                if (alreadyPaid.add(allocation.getAllocatedAmount()).compareTo(bill.getTotalAmount()) > 0) {
+                    throw new IllegalArgumentException("Payment allocation exceeds bill outstanding balance");
+                }
+            } else if ("EXPENSE".equals(allocation.getDocumentType())) {
+                TransactionEntity expense = transactionRepository.findForPosting(allocation.getDocumentId(), companyId)
+                        .filter(value -> value.getTransactionType() == TransactionType.EXPENSE
+                                && value.getJournalEntry() != null && value.getVendor() != null
+                                && value.getVendor().getId().equals(payment.getVendor().getId())
+                                && (value.getPaymentStatus() == PaymentStatus.UNPAID
+                                    || value.getPaymentStatus() == PaymentStatus.PARTIALLY_PAID))
+                        .orElseThrow(() -> new IllegalArgumentException("Allocation must target an unpaid payable expense for the selected vendor"));
+                BigDecimal alreadyPaid = paymentAllocationRepository.sumPostedForDocument(companyId, "EXPENSE", expense.getId());
+                if (alreadyPaid.add(allocation.getAllocatedAmount()).compareTo(expense.getTotalAmount()) > 0) {
+                    throw new IllegalArgumentException("Payment allocation exceeds expense outstanding balance");
+                }
+                payableExpenses.add(expense);
+            } else {
+                throw new IllegalArgumentException("Unsupported payment allocation document type");
+            }
+            payableTotal = payableTotal.add(allocation.getAllocatedAmount());
+        }
+        addDebit(lines, requireLedger(companyId, "SUPPLIER_PAYABLE"), payableTotal,
+                "Settlement of supplier bills", lineNo++);
+        addCredit(lines, source, payment.getAmount(), "Payment " + payment.getPaymentNumber(), lineNo);
+        JournalEntryEntity journal = createAndValidate(companyId, payment.getCompany(), JournalSourceType.PAYMENT,
+                payment.getId(), payment.getPaymentDate(), "Payment " + payment.getPaymentNumber() + " - "
+                        + payment.getVendor().getDisplayName(), lines);
+        payment.setVoucherId(journal.getId());
+        payment.setStatus(com.qpoos.erp.payment.domain.PaymentStatus.POSTED);
+        payment.setUpdatedBy(SecurityUtils.getUserId());
+        paymentRepository.saveAndFlush(payment);
+        refreshExpensePaymentStatuses(payableExpenses, companyId);
+        return journal;
+    }
+
+    @Transactional
+    public JournalEntryEntity reversePayment(Long id, java.time.LocalDate reversalDate, String reason) {
+        UUID companyId = SecurityUtils.getCompanyId();
+        PaymentEntity payment = paymentRepository.findForPosting(id, companyId)
+                .orElseThrow(() -> new IllegalArgumentException("Payment not found"));
+        if (payment.getStatus() == com.qpoos.erp.payment.domain.PaymentStatus.REVERSED
+                && payment.getReversalVoucherId() != null) {
+            return journalEntryRepository.findById(payment.getReversalVoucherId())
+                    .orElseThrow(() -> new IllegalStateException("Payment reversal journal is missing"));
+        }
+        if (payment.getStatus() != com.qpoos.erp.payment.domain.PaymentStatus.POSTED || payment.getVoucherId() == null) {
+            throw new IllegalArgumentException("Only posted payments can be reversed");
+        }
+        if (reversalDate == null || reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("Reversal date and reason are required");
+        }
+        JournalEntryEntity original = journalEntryRepository.findById(payment.getVoucherId())
+                .orElseThrow(() -> new IllegalStateException("Original payment journal is missing"));
+        List<JournalLineEntity> reversedLines = new ArrayList<>();
+        for (JournalLineEntity sourceLine : original.getLines()) {
+            reversedLines.add(JournalLineEntity.builder().ledger(sourceLine.getLedger())
+                    .lineNo(sourceLine.getLineNo()).debitAmount(sourceLine.getCreditAmount())
+                    .creditAmount(sourceLine.getDebitAmount())
+                    .description("Reversal: " + sourceLine.getDescription()).build());
+        }
+        journalValidator.validate(companyId, reversedLines);
+        JournalEntryEntity reversal = createAndValidate(companyId, payment.getCompany(), JournalSourceType.PAYMENT,
+                payment.getId(), reversalDate, "Reversal of " + payment.getPaymentNumber() + ": " + reason,
+                reversedLines, JournalEntryKind.REVERSAL);
+        payment.setReversalVoucherId(reversal.getId());
+        payment.setReversalReason(reason.trim());
+        payment.setStatus(com.qpoos.erp.payment.domain.PaymentStatus.REVERSED);
+        payment.setUpdatedBy(SecurityUtils.getUserId());
+        paymentRepository.saveAndFlush(payment);
+        List<TransactionEntity> expenses = paymentAllocationRepository.findAllByPayment_IdAndCompany_Id(payment.getId(), companyId)
+                .stream().filter(a -> "EXPENSE".equals(a.getDocumentType()))
+                .sorted(java.util.Comparator.comparing(com.qpoos.erp.payment.domain.PaymentAllocationEntity::getDocumentId))
+                .map(a -> transactionRepository.findForPosting(a.getDocumentId(), companyId).orElse(null))
+                .filter(java.util.Objects::nonNull).toList();
+        refreshExpensePaymentStatuses(expenses, companyId);
+        return reversal;
+    }
+
+    private void refreshExpensePaymentStatuses(List<TransactionEntity> expenses, UUID companyId) {
+        for (TransactionEntity expense : expenses) {
+            BigDecimal settled = paymentAllocationRepository.sumPostedForDocument(companyId, "EXPENSE", expense.getId());
+            PaymentStatus status = settled.signum() == 0 ? PaymentStatus.UNPAID
+                    : settled.compareTo(expense.getTotalAmount()) >= 0 ? PaymentStatus.PAID : PaymentStatus.PARTIALLY_PAID;
+            expense.setPaymentStatus(status);
+            expense.setUpdatedBy(SecurityUtils.getUserId());
+            transactionRepository.save(expense);
+        }
+    }
     @Transactional
     public JournalEntryEntity postPurchaseBill(Long id) {
         UUID companyId = SecurityUtils.getCompanyId();
@@ -144,6 +287,7 @@ public class AccountingPostingService {
         if (transaction.getPaymentStatus() == PaymentStatus.CANCELLED) {
             throw new IllegalArgumentException("Cancelled expenses cannot be posted");
         }
+        boolean payLater = transaction.getPaymentStatus() == PaymentStatus.UNPAID;
         if (transaction.getPaymentStatus() == PaymentStatus.PARTIALLY_PAID) {
             throw new IllegalArgumentException(
                     "Partially paid expenses cannot be posted until the paid and outstanding amounts are recorded separately"
@@ -152,20 +296,23 @@ public class AccountingPostingService {
         if (transaction.getTransactionDate() == null) {
             throw new IllegalArgumentException("Expense date is required for posting");
         }
-        if (transaction.getPaymentDate() == null) {
+        if (!payLater && transaction.getPaymentDate() == null) {
             throw new IllegalArgumentException("Expense payment date is required for posting");
         }
-        if (transaction.getPaymentStatus() != PaymentStatus.PAID) {
+        if (!payLater && transaction.getPaymentStatus() != PaymentStatus.PAID) {
             throw new IllegalArgumentException("Expense must be paid before it can be posted");
+        }
+        if (payLater && transaction.getVendor() == null) {
+            throw new IllegalArgumentException("A vendor is required for an expense posted to accounts payable");
         }
 
         LedgerEntity paymentLedger = transaction.getPaymentLedger();
-        if (paymentLedger == null
+        if (!payLater && (paymentLedger == null
                 || !companyId.equals(paymentLedger.getCompany().getId())
                 || !Boolean.TRUE.equals(paymentLedger.getActive())
                 || !Boolean.TRUE.equals(paymentLedger.getPostingAllowed())
                 || (paymentLedger.getLedgerType() != com.qpoos.erp.accounting.chartofaccount.domain.LedgerType.CASH
-                    && paymentLedger.getLedgerType() != com.qpoos.erp.accounting.chartofaccount.domain.LedgerType.BANK)) {
+                    && paymentLedger.getLedgerType() != com.qpoos.erp.accounting.chartofaccount.domain.LedgerType.BANK))) {
             throw new IllegalArgumentException("Expense must use an active, postable company cash or bank account");
         }
 
@@ -209,13 +356,9 @@ public class AccountingPostingService {
         }
         addRoundOff(lines, companyId, transaction.getRoundOff(), lineNo);
 
-        addCredit(
-                lines,
-                paymentLedger,
-                MoneyCalculator.money(transaction.getTotalAmount()),
-                "Paid from " + paymentLedger.getName(),
-                nextLineNumber(lines)
-        );
+        LedgerEntity creditLedger = payLater ? requireLedger(companyId, "SUPPLIER_PAYABLE") : paymentLedger;
+        addCredit(lines, creditLedger, MoneyCalculator.money(transaction.getTotalAmount()),
+                payLater ? "Expense payable" : "Paid from " + paymentLedger.getName(), nextLineNumber(lines));
 
         String narration = transaction.getReferenceNo() == null || transaction.getReferenceNo().isBlank()
                 ? "Expense transaction " + transaction.getId()
@@ -291,6 +434,20 @@ public class AccountingPostingService {
             String narration,
             List<JournalLineEntity> lines
     ) {
+        return createAndValidate(companyId, company, sourceType, sourceId, accountingDate, narration, lines,
+                JournalEntryKind.ORIGINAL);
+    }
+
+    private JournalEntryEntity createAndValidate(
+            UUID companyId,
+            com.qpoos.erp.company.domain.CompanyEntity company,
+            JournalSourceType sourceType,
+            Long sourceId,
+            java.time.LocalDate accountingDate,
+            String narration,
+            List<JournalLineEntity> lines,
+            JournalEntryKind entryKind
+    ) {
         journalValidator.validate(companyId, lines);
         JournalEntryEntity entry = JournalEntryEntity.builder()
                 .company(company)
@@ -298,7 +455,7 @@ public class AccountingPostingService {
                 .accountingDate(accountingDate)
                 .sourceType(sourceType)
                 .sourceDocumentId(sourceId)
-                .entryKind(JournalEntryKind.ORIGINAL)
+                .entryKind(entryKind)
                 .narration(narration)
                 .status(JournalStatus.POSTED)
                 .createdBy(SecurityUtils.getUserId())

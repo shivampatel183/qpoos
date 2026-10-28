@@ -61,6 +61,8 @@ public record TransactionRequest(
         @Size(max = 4000)
         String attachments,
 
+        Boolean payLater,
+
         @NotEmpty
         List<@Valid TransactionLineRequest> lines
 ) {

@@ -17,6 +17,10 @@ public interface PurchaseBillRepository extends JpaRepository<PurchaseBillEntity
 
     List<PurchaseBillEntity> findAllByCompany_IdOrderByBillDateDescIdDesc(UUID companyId);
 
+    List<PurchaseBillEntity> findAllByCompany_IdAndVendor_IdAndStatusOrderByDueDateAscIdAsc(
+            UUID companyId, Long vendorId, com.qpoos.erp.purchase.shared.domain.PurchaseBillStatus status
+    );
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select bill

@@ -22,6 +22,11 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
             TransactionType transactionType
     );
 
+    List<TransactionEntity> findAllByCompany_IdAndVendor_IdAndTransactionTypeAndPaymentStatusInAndActiveTrueOrderByDueDateAscIdAsc(
+            UUID companyId, Long vendorId, TransactionType transactionType,
+            List<com.qpoos.erp.purchase.expense.domain.PaymentStatus> statuses
+    );
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             select transaction

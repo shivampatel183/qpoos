@@ -86,6 +86,9 @@ const PurchaseBillFormPage = lazy(() =>
     default: module.PurchaseBillFormPage,
   })),
 );
+const PaymentListPage = lazy(() => import("./pages/payments/PaymentPages").then((module) => ({ default: module.PaymentListPage })));
+const PaymentFormPage = lazy(() => import("./pages/payments/PaymentPages").then((module) => ({ default: module.PaymentFormPage })));
+const PaymentDetailPage = lazy(() => import("./pages/payments/PaymentPages").then((module) => ({ default: module.PaymentDetailPage })));
 
 function PageLoader() {
   return (
@@ -190,6 +193,10 @@ export const router = createBrowserRouter([
                     path: "purchase-bills/:billId",
                     element: page(<PurchaseBillFormPage />),
                   },
+                  { path: "payments", element: page(<PaymentListPage />) },
+                  { path: "payments/new", element: page(<PaymentFormPage />) },
+                  { path: "payments/:paymentId/edit", element: page(<PaymentFormPage />) },
+                  { path: "payments/:paymentId", element: page(<PaymentDetailPage />) },
                   {
                     path: "expenses/bills",
                     element: <Navigate to="/purchase-bills" replace />,

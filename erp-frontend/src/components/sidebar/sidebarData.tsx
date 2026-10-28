@@ -106,6 +106,7 @@ export const secondaryNavItems: SecondaryNavItem[] = [
     children: [
       { id: "exp-all", label: "Expenses", path: "/expenses/all" },
       { id: "exp-bills", label: "Bills", path: "/purchase-bills" },
+      { id: "exp-payments", label: "Payments", path: "/payments" },
       {
         id: "purchase-orders",
         label: "Purchase Orders",
@@ -121,7 +122,7 @@ export const secondaryNavItems: SecondaryNavItem[] = [
     icon: <DollarSign size={18} strokeWidth={2} />,
     children: [
       { id: "sales-invoices", label: "Invoices", path: "/sales/invoices" },
-      { id: "sales-payments", label: "Payments", path: "/sales/payments" },
+      { id: "sales-payments", label: "Payments", path: "/payments" },
     ],
   },
   {

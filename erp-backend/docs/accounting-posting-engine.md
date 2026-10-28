@@ -38,7 +38,7 @@ Expenses require a payment date and a company-owned, active, postable Cash or Ba
 - `GET /api/transactions` returns only expenses for the expense experience; Purchase Bills and Purchase Orders retain their dedicated pages and APIs.
 - Expense accounting is posted immediately when saved; the legacy post endpoint remains idempotent for compatibility and older unposted records.
 - Legacy purchase bills already marked `POSTED` without a journal are not silently reposted; they need reconciliation.
-- The engine does not create entries for purchase orders, sales documents, payments, or returns yet. Sales invoices do not exist in the current application.
+- Supplier payments are posted through `POST /api/payments/{id}/post`, including purchase-bill and payable-expense allocations. The engine does not create entries for purchase orders, sales documents, or returns yet. Incoming customer receipts remain unavailable until sales invoices/receivables exist.
 - There is no accounting-period close model. Financial-year configuration is used for journal numbering, but a closed-period check is not yet possible.
 - Manual journals, reversal APIs, General Ledger detail, and Trial Balance are later phases.
 

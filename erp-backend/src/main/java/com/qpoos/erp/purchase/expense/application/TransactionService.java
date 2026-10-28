@@ -145,14 +145,17 @@ public class TransactionService {
         transaction.setRoundOff(amountOrZero(request.roundOff()));
         transaction.setTotalAmount(amountOrZero(request.totalAmount()));
         if (request.transactionType() == TransactionType.EXPENSE) {
-            if (request.paymentDate() == null) {
-                throw new IllegalArgumentException("Payment date is required for an expense");
+            if (Boolean.TRUE.equals(request.payLater())) {
+                if (transaction.getVendor() == null) throw new IllegalArgumentException("Vendor is required for an expense paid later");
+                transaction.setPaymentDate(null);
+                transaction.setPaymentLedger(null);
+                transaction.setPaymentStatus(PaymentStatus.UNPAID);
+            } else {
+                if (request.paymentDate() == null) throw new IllegalArgumentException("Payment date is required for an expense");
+                if (transaction.getPaymentLedger() == null) throw new IllegalArgumentException("Paid from account is required for an expense");
+                transaction.setPaymentDate(request.paymentDate());
+                transaction.setPaymentStatus(PaymentStatus.PAID);
             }
-            if (transaction.getPaymentLedger() == null) {
-                throw new IllegalArgumentException("Paid from account is required for an expense");
-            }
-            transaction.setPaymentDate(request.paymentDate());
-            transaction.setPaymentStatus(PaymentStatus.PAID);
         } else {
             transaction.setPaymentDate(request.paymentDate());
             transaction.setPaymentStatus(
@@ -164,7 +167,7 @@ public class TransactionService {
     }
 
     private LedgerEntity resolvePaymentLedger(UUID companyId, TransactionRequest request) {
-        if (request.transactionType() != TransactionType.EXPENSE) {
+        if (request.transactionType() != TransactionType.EXPENSE || Boolean.TRUE.equals(request.payLater())) {
             return null;
         }
         if (request.paymentLedgerId() == null) {

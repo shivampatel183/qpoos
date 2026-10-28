@@ -33,6 +33,7 @@ type TransactionFormState = {
   referenceNo: string;
   paymentDate: string;
   paymentLedgerId: string;
+  payLater: boolean;
   roundOff: string;
   notes: string;
   attachments: string;
@@ -83,6 +84,7 @@ function createFormState(transaction?: Transaction): TransactionFormState {
     paymentLedgerId: transaction?.paymentLedgerId
       ? String(transaction.paymentLedgerId)
       : "",
+    payLater: transaction?.paymentStatus === "UNPAID" || transaction?.paymentStatus === "PARTIALLY_PAID",
     roundOff: String(transaction?.roundOff ?? 0),
     notes: transaction?.notes ?? "",
     attachments: transaction?.attachments ?? "",
@@ -149,9 +151,10 @@ function validateForm(
 ): TransactionFormErrors {
   const errors: TransactionFormErrors = {};
   if (!form.transactionDate) errors.transactionDate = "This field is required.";
-  if (!form.paymentDate) errors.paymentDate = "Payment date is required.";
-  if (!form.paymentLedgerId)
+  if (!form.payLater && !form.paymentDate) errors.paymentDate = "Payment date is required.";
+  if (!form.payLater && !form.paymentLedgerId)
     errors.paymentLedgerId = "Select the cash or bank account used.";
+  if (form.payLater && !form.vendorId) errors.vendorId = "Select the vendor to pay later.";
   if (form.roundOff.trim() && !MONEY_PATTERN.test(form.roundOff.trim())) {
     errors.roundOff = "Enter a valid amount.";
   }
@@ -196,9 +199,10 @@ function toPayload(
     taxAmount: totals.taxAmount,
     roundOff: amount(form.roundOff),
     totalAmount: totals.totalAmount,
-    paymentDate: optionalValue(form.paymentDate),
-    paymentLedgerId: optionalNumber(form.paymentLedgerId),
-    paymentStatus: "PAID",
+    paymentDate: form.payLater ? null : optionalValue(form.paymentDate),
+    paymentLedgerId: form.payLater ? null : optionalNumber(form.paymentLedgerId),
+    paymentStatus: form.payLater ? "UNPAID" : "PAID",
+    payLater: form.payLater,
     notes: optionalValue(form.notes),
     attachments: optionalValue(form.attachments),
     lines: lines.map((line, index) => {
@@ -481,6 +485,7 @@ export function TransactionForm({
                 options={[{ value: "", label: "No vendor" }, ...vendorOptions]}
                 disabled={loadingLookups}
               />
+              {errors.vendorId && <small className="transaction-form__error">{errors.vendorId}</small>}
             </label>
 
             <label className="transaction-form__field">
@@ -493,6 +498,12 @@ export function TransactionForm({
               />
             </label>
 
+            <label className="transaction-form__field transaction-form__pay-later">
+              <span><input type="checkbox" checked={form.payLater} onChange={(event) => setForm((current) => ({ ...current, payLater: event.target.checked }))} /> Record as payable and pay later</span>
+              <small>This posts the expense to Accounts Payable; settle it later from Payments.</small>
+            </label>
+
+            {!form.payLater && (
             <label
               className={`transaction-form__field transaction-form__field--required${errors.paymentDate ? " transaction-form__field--invalid" : ""}`}
             >
@@ -510,7 +521,9 @@ export function TransactionForm({
                 </small>
               )}
             </label>
+            )}
 
+            {!form.payLater && (
             <label
               className={`transaction-form__field transaction-form__field--required${errors.paymentLedgerId ? " transaction-form__field--invalid" : ""}`}
             >
@@ -539,6 +552,7 @@ export function TransactionForm({
                 </small>
               )}
             </label>
+            )}
 
             <label
               className={`transaction-form__field${errors.roundOff ? " transaction-form__field--invalid" : ""}`}

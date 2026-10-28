@@ -1,7 +1,6 @@
 package com.qpoos.erp.payment.domain;
 
 import com.qpoos.erp.company.domain.CompanyEntity;
-import com.qpoos.erp.purchase.expense.domain.TransactionEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -29,15 +28,15 @@ import java.time.OffsetDateTime;
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_payment_allocation_payment_transaction",
-                        columnNames = {"payment_id", "transaction_id"}
+                        columnNames = {"payment_id", "document_type", "document_id"}
                 )
         },
         indexes = {
                 @Index(name = "idx_payment_allocation_payment", columnList = "payment_id"),
-                @Index(name = "idx_payment_allocation_transaction", columnList = "transaction_id"),
-                @Index(name = "idx_payment_allocation_company_transaction", columnList = "company_id, transaction_id")
+                @Index(name = "idx_payment_allocation_document", columnList = "company_id, document_type, document_id")
         }
 )
+@org.hibernate.annotations.Check(constraints = "allocated_amount > 0")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -57,9 +56,11 @@ public class PaymentAllocationEntity {
     @JoinColumn(name = "payment_id", nullable = false)
     private PaymentEntity payment;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "transaction_id", nullable = false)
-    private TransactionEntity transaction;
+    @Column(name = "document_type", nullable = false, length = 40)
+    private String documentType;
+
+    @Column(name = "document_id", nullable = false)
+    private Long documentId;
 
     @Column(name = "allocated_amount", nullable = false, precision = 19, scale = 4)
     private BigDecimal allocatedAmount;

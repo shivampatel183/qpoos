@@ -1,8 +1,16 @@
 package com.qpoos.erp.payment.domain;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 import com.qpoos.erp.accounting.chartofaccount.ledger.domain.LedgerEntity;
 import com.qpoos.erp.company.domain.CompanyEntity;
 import com.qpoos.erp.purchase.vendor.domain.VendorEntity;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,20 +34,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
 @Entity
 @Table(
         name = "payments",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_payment_company_year_number",
-                        columnNames = {"company_id", "financial_year_id", "payment_number"}
+                        name = "uk_payment_company_number",
+                        columnNames = {"company_id", "payment_number"}
                 )
         },
         indexes = {
@@ -48,6 +49,7 @@ import java.util.UUID;
                 @Index(name = "idx_payment_company_status", columnList = "company_id, status")
         }
 )
+@org.hibernate.annotations.Check(constraints = "amount > 0")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -62,9 +64,6 @@ public class PaymentEntity {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
     private CompanyEntity company;
-
-    @Column(name = "financial_year_id")
-    private Long financialYearId;
 
     @Column(name = "payment_number", nullable = false, length = 80)
     private String paymentNumber;
@@ -100,6 +99,12 @@ public class PaymentEntity {
 
     @Column(name = "voucher_id", unique = true)
     private Long voucherId;
+
+    @Column(name = "reversal_voucher_id", unique = true)
+    private Long reversalVoucherId;
+
+    @Column(name = "reversal_reason", length = 1000)
+    private String reversalReason;
 
     @Column(name = "created_by")
     private UUID createdBy;
